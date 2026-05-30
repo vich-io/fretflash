@@ -1,0 +1,247 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-feature-settings: "cv01", "ss03";
+  line-height: 1.5;
+  --bg: #07080a;
+  --panel: rgba(255, 255, 255, 0.045);
+  --panel-strong: rgba(255, 255, 255, 0.075);
+  --border: rgba(255, 255, 255, 0.11);
+  --border-soft: rgba(255, 255, 255, 0.07);
+  --text: #f4f6fb;
+  --muted: #8d95a3;
+  --soft: #c5cbd6;
+  --accent: #7477ff;
+  --accent-strong: #8d91ff;
+  --danger: #ff6b7a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(116, 119, 255, 0.18), transparent 34rem),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.055), transparent 26rem),
+    var(--bg);
+  color: var(--text);
+  margin: 0;
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 42rem;
+  min-height: 100vh;
+  padding: clamp(1.25rem, 5vw, 2.5rem);
+  text-align: center;
+}
+
+.app-shell::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025));
+  border: 1px solid var(--border-soft);
+  border-radius: 2rem;
+  box-shadow: 0 2rem 6rem rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  content: "";
+  inset: clamp(0.75rem, 3vw, 2rem);
+  pointer-events: none;
+  position: fixed;
+  z-index: -1;
+}
+
+h1 {
+  color: var(--muted);
+  font-size: clamp(0.8rem, 2.6vw, 0.95rem);
+  font-weight: 650;
+  letter-spacing: 0.22em;
+  margin: 0 0 clamp(1.4rem, 4vw, 2.2rem);
+  text-transform: uppercase;
+}
+
+.prompt {
+  color: var(--text);
+  font-size: clamp(5.4rem, 31vw, 13rem);
+  font-weight: 780;
+  letter-spacing: -0.075em;
+  line-height: 0.82;
+  margin: 0 0 1rem;
+  text-shadow: 0 0 4rem rgba(116, 119, 255, 0.18);
+}
+
+.preview {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 0.65rem;
+  justify-content: center;
+  margin: 0 0 1.2rem;
+  padding: 0.45rem 0.7rem 0.45rem 0.9rem;
+}
+
+.preview span {
+  color: var(--soft);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.preview strong {
+  align-items: center;
+  background: rgba(116, 119, 255, 0.16);
+  border: 1px solid rgba(141, 145, 255, 0.28);
+  border-radius: 999px;
+  color: var(--text);
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 760;
+  justify-content: center;
+  min-width: 2.4rem;
+  padding: 0.12rem 0.55rem;
+}
+
+.status,
+.detail,
+.beat,
+.note,
+.error {
+  margin: 0.35rem 0;
+}
+
+.prompt + .status {
+  margin-top: 0.9rem;
+}
+
+.status,
+.detail {
+  color: var(--soft);
+  max-width: 30rem;
+}
+
+.detail {
+  color: var(--muted);
+}
+
+.beat,
+.note {
+  color: var(--soft);
+  font-size: clamp(1.15rem, 4.5vw, 1.45rem);
+  font-weight: 680;
+  letter-spacing: -0.02em;
+}
+
+.control-row {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 0.7rem;
+  justify-content: center;
+  margin: 1.6rem 0 0;
+  padding: 0.42rem 0.42rem 0.42rem 0.9rem;
+}
+
+label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+input {
+  appearance: textfield;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 720;
+  height: 3rem;
+  max-width: 6.5rem;
+  outline: none;
+  padding: 0 0.95rem;
+  text-align: center;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+input:focus {
+  border-color: rgba(141, 145, 255, 0.72);
+  box-shadow: 0 0 0 4px rgba(116, 119, 255, 0.18);
+}
+
+.actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  margin-top: 1.45rem;
+}
+
+button {
+  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  box-shadow: 0 1rem 2.5rem rgba(116, 119, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 760;
+  min-height: 3.25rem;
+  min-width: 8.5rem;
+  padding: 0.8rem 1.45rem;
+  transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
+}
+
+button:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+button:active {
+  filter: brightness(0.96);
+  transform: translateY(0);
+}
+
+#stop-button {
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--soft);
+}
+
+.error {
+  color: var(--danger);
+  font-weight: 720;
+}
+
+@media (max-width: 520px) {
+  .control-row {
+    width: min(100%, 18rem);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  button {
+    width: min(100%, 18rem);
+  }
+}
