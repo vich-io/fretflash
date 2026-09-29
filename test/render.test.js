@@ -23,7 +23,7 @@ import {
 
 test('render module owns escaping and setup shell rendering', () => {
   assert.equal(escapeHtml('<b>"x" & y</b>'), '&lt;b&gt;&quot;x&quot; &amp; y&lt;/b&gt;');
-  assert.deepEqual(PROMPT_DECK_LABELS.slice(0, 4), ['B#', 'C', 'C#', 'Db']);
+  assert.deepEqual(PROMPT_DECK_LABELS.slice(0, 4), ['C', 'Cb', 'C#', 'D']);
 
   const setup = {
     ...createSetup({

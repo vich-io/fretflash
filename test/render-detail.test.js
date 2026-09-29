@@ -100,7 +100,7 @@ test('renderHtml renderFretRange override is display-only and escaped', () => {
   assert.match(html, /value="3&lt;script&gt;"/);
   assert.doesNotMatch(html, /autofocus="true"/);
   assert.doesNotMatch(html, /<script>/);
-  assert.match(html, /<p class="note-pool-summary">2 notes · 5 clicks · 4s<\/p>/);
+  assert.match(html, /<p class="note-pool-summary">2 notes · 5 clicks · 4s · shuffled<\/p>/);
 });
 
 test('renderHtml renders the compact setup shell and validation errors', () => {
@@ -119,14 +119,15 @@ test('renderHtml renders the compact setup shell and validation errors', () => {
   assert.doesNotMatch(brandButton, /<(?:h1|p|div)(?:\s|>)/);
   assert.doesNotMatch(html, /<h1>FretFlash<\/h1>|<h1>FRETFLASH<\/h1>/);
   assert.match(html, /<section class="drill-header" aria-label="Drill setup">/);
-  ['BPM', 'Frets', 'Strings', 'Tuning', 'Targets', 'Order'].forEach((label) => {
+  ['BPM', 'Frets', 'Strings', 'Tuning', 'Targets'].forEach((label) => {
     assert.match(html, new RegExp(`<span class="drill-cell-label">${label}<\\/span>`));
   });
 
   assert.match(html, /<a class="home-link" href="https:\/\/vich\.io\/">vich\.io<\/a>/);
   assert.ok(html.indexOf('class="app-footer"') > html.indexOf('id="start-button"'));
   assert.match(html, /class="drill-cell-chevron" aria-hidden="true">⌄<\/span>/);
-  assert.match(html, /<div class="drill-cell drill-cell-static" aria-label="Order Shuffled"><span class="drill-cell-label">Order<\/span><strong>Shuffled<\/strong><\/div>/);
+  assert.match(html, / · shuffled<\/p>/);
+  assert.doesNotMatch(html, /drill-cell-static/);
   assert.doesNotMatch(html, /data-popover-target="order"/);
   assert.doesNotMatch(html, /data-popover="order"/);
   assert.match(html, /<footer class="deck-footer"><button id="start-button" class="primary-action" type="button">Start<\/button><\/footer>/);
@@ -147,10 +148,11 @@ test('renderHtml renders the compact setup shell and validation errors', () => {
   assert.doesNotMatch(errorHtml, /<p class="error" role="alert">Choose frets/);
 });
 
-test('renderHtml renders independent prompt deck spelling chips without enharmonic grouping', () => {
+test('renderHtml groups independent spellings by written letter, never by enharmonic equivalence', () => {
   const setup = createSetup({ bpm: 80, selectedLabels: ['C', 'Db'] });
   const html = renderHtml(getViewModel(createIdleState(setup)), setup);
-  const labels = ['B#', 'C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'E#', 'Fb', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B', 'Cb'];
+  const labels = ['C', 'Cb', 'C#', 'D', 'Db', 'D#', 'E', 'Eb', 'E#', 'F', 'Fb', 'F#', 'G', 'Gb', 'G#', 'A', 'Ab', 'A#', 'B', 'Bb', 'B#'];
+  assert.equal((html.match(/class="note-group"/g) ?? []).length, 7);
 
   assert.match(html, /<section class="prompt-deck" aria-label="Note prompt deck">/);
   assert.doesNotMatch(html, /Build your prompt deck\./);
@@ -193,8 +195,9 @@ test('renderHtml renders setup popovers for header cells', () => {
   assert.match(html, /data-popover-target="bpm"/);
   assert.match(html, /<div class="bpm-field" aria-label="BPM value">/);
   assert.match(html, /<input id="bpm" name="bpm" type="number"[^>]*aria-label="BPM"[^>]*value="40">/);
-  assert.match(html, /<div class="bpm-stepper"><button class="bpm-stepper-button" type="button" data-bpm-step="1" aria-label="Increase BPM">⌃<\/button><button class="bpm-stepper-button" type="button" data-bpm-step="-1" aria-label="Decrease BPM">⌄<\/button><\/div>/);
-  assert.match(html, /<div class="bpm-quick-label">Quick pick<\/div>/);
+  assert.match(html, /data-bpm-step="-1" aria-label="Decrease BPM">−<\/button>/);
+  assert.match(html, /data-bpm-step="1" aria-label="Increase BPM">\+<\/button>/);
+  assert.match(html, /data-close-editor>Done<\/button>/);
   assert.doesNotMatch(html, /<label for="bpm">BPM<\/label>/);
   assert.deepEqual([...html.matchAll(/data-bpm="(\d+)"/g)].map((match) => match[1]), ['30', '40', '50', '60', '70', '80', '100']);
   assert.match(html, /<button class="is-selected" type="button" data-bpm="40" aria-pressed="true">40<\/button>/);
@@ -248,7 +251,7 @@ test('renderHtml renders done as the terminal state of the practice stage', () =
   assert.match(html, /<button id="setup-button" class="secondary-action" type="button">Setup<\/button>/);
   assert.match(html, /BPM/);
   assert.match(html, /Frets/);
-  assert.match(html, /Order/);
+  assert.match(html, /Shuffled/);
   assert.doesNotMatch(html, /class="prompt-deck"/);
   assert.doesNotMatch(html, /score|streak|stats|history/i);
 });
@@ -386,12 +389,10 @@ test('renderHtml frames active practice as the same app console without editable
   assert.match(html, /<div class="setup-app-bar practice-app-bar">/);
   assert.match(html, /<p class="shortcut-hint"><span class="shortcut-plain">SPACE Pause · ESC Exit<\/span>/);
   assert.match(html, /<section class="practice-context" aria-label="Current drill setup">/);
-  ['BPM', 'Frets', 'Strings', 'Tuning', 'Targets', 'Order'].forEach((label) => {
-    assert.match(html, new RegExp(`<span>${label}<\\/span>`));
-  });
-  assert.match(html, /<strong>72<\/strong>/);
-  assert.match(html, /<strong>5–12<\/strong>/);
-  assert.match(html, /<strong>All in range<\/strong>/);
+  assert.match(html, /class="practice-tempo">72 BPM<\/span>/);
+  assert.match(html, /<span>Frets 5–12<\/span>/);
+  assert.match(html, /<details class="context-details"><summary>Setup details<\/summary>/);
+  assert.match(html, /Strings .*<br>Tuning .*<br>Targets All in range · Shuffled/);
   assert.match(html, /<section class="practice-display practice-running"/);
   assert.doesNotMatch(html, /data-popover-target=/);
   assert.doesNotMatch(html, /class="header-popovers"/);
@@ -427,7 +428,8 @@ test('renderHtml renders paused as an active drill state with resume and stop co
   assert.match(html, /<button id="restart-button" class="secondary-action" type="button">Restart<\/button>/);
   assert.match(html, /<button id="stop-button" class="danger-action" type="button">Stop<\/button>/);
   assert.doesNotMatch(html, /class="prompt-deck"/);
-  assert.doesNotMatch(html, /<input id="bpm"/);
+  assert.match(html, /<input id="bpm"/);
+  assert.doesNotMatch(html, /<input id="fret-from"|data-tuning-id=/);
 
   const runningHtml = renderHtml(getViewModel({ ...state, phase: 'running', pausedFromPhase: undefined }), state);
   assert.doesNotMatch(runningHtml, /id="restart-button"/);

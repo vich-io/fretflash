@@ -28,6 +28,7 @@ function updateChildren(parent, next) {
     }
     if (current.nodeType !== 1) return;
     for (const attribute of [...current.attributes]) {
+      if (current.tagName === 'DETAILS' && attribute.name === 'open') continue;
       if (!replacement.hasAttribute(attribute.name)) current.removeAttribute(attribute.name);
     }
     for (const attribute of replacement.attributes) {
@@ -62,7 +63,7 @@ export function mountBrowserApp({
       ...createSetup(state), openPopover, drafts: drafts.values, fieldErrors: drafts.errors,
       renderFretRange: { from: drafts.values.from, to: drafts.values.to },
       invalidDraft: Boolean(drafts.errors.fretRange), startPending: Boolean(state.startPending),
-    }, actionError || (state.phase === 'idle' ? drafts.errors.bpm || drafts.errors.tuning : ''));
+    }, actionError || drafts.errors.bpm || drafts.errors.tuning || '');
     const template = documentTarget.createElement('template');
     template.innerHTML = html;
     if (state.startPending) {
@@ -89,7 +90,8 @@ export function mountBrowserApp({
     drafts.reset(next, resetFields);
     const result = drafts.read(next);
     actionError = '';
-    controller.setSetup(result.setup);
+    if (controller.getState().phase === 'idle') controller.setSetup(result.setup);
+    else controller.setBpm(result.setup.bpm);
     persist();
     return result.valid;
   }
@@ -103,7 +105,7 @@ export function mountBrowserApp({
   function start(repeat = false) {
     const state = controller.getState();
     if (state.startPending) return;
-    if (state.phase === 'idle' && !commit()) {
+    if (!commit()) {
       actionError = Object.values(drafts.errors).find(Boolean) || '';
       paint();
       return;
@@ -118,19 +120,39 @@ export function mountBrowserApp({
     commit(setup => ({ ...setup, bpm }), ['bpm']);
   }
 
+  function closeEditor() {
+    const trigger = openPopover;
+    openPopover = '';
+    paint();
+    root.querySelector(`[data-popover-target="${trigger}"]`)?.focus({ preventScroll: true });
+  }
+
+  function continueRound(restart = false) {
+    if (controller.getState().startPending || !commit()) return;
+    openPopover = '';
+    if (restart) controller.restartCurrent(); else controller.resume();
+  }
+
   function handleClick(event) {
     const button = event.target.closest('button');
     if (!button || !root.contains(button) || button.disabled) return;
-    if (button.dataset.popoverTarget) {
-      openPopover = openPopover === button.dataset.popoverTarget ? '' : button.dataset.popoverTarget;
-      paint(); return;
+    if (button.dataset.popoverTarget || button.dataset.recoverEditor) {
+      const target = button.dataset.popoverTarget || button.dataset.recoverEditor;
+      openPopover = openPopover === target ? '' : target;
+      paint();
+      if (openPopover && (event.detail === 0 || button.dataset.recoverEditor)) {
+        const panel = root.querySelector(`[data-popover="${openPopover}"]`);
+        (panel.querySelector('input') || panel.querySelector('button:not([data-close-editor])'))?.focus();
+      }
+      return;
     }
+    if (button.hasAttribute('data-close-editor')) { closeEditor(); return; }
     // An app action owns this click, including closing an outside editor.
     if (!button.closest('.header-popover')) openPopover = '';
     const transport = {
       'start-button': () => start(), 'same-order-button': () => start(true),
-      'pause-button': () => controller.pause(), 'resume-button': () => controller.resume(),
-      'restart-button': () => controller.restartCurrent(), 'stop-button': stop,
+      'pause-button': () => controller.pause(), 'resume-button': () => continueRound(),
+      'restart-button': () => continueRound(true), 'stop-button': stop,
       'brand-home-button': stop, 'setup-button': stop, 'cancel-start-button': stop,
     };
     if (transport[button.id]) { transport[button.id](); return; }
@@ -169,29 +191,28 @@ export function mountBrowserApp({
     const state = controller.getState();
     if (event.key === 'Escape') {
       if (event.repeat) { event.preventDefault(); return; }
-      if (state.startPending || state.phase !== 'idle') { event.preventDefault(); stop(); return; }
       if (openPopover) {
-        event.preventDefault(); const trigger = openPopover; openPopover = ''; paint();
-        root.querySelector(`[data-popover-target="${trigger}"]`)?.focus({ preventScroll: true });
+        event.preventDefault(); closeEditor(); return;
       }
+      if (state.startPending || state.phase !== 'idle') { event.preventDefault(); stop(); }
       return;
     }
     const target = event.target;
     if (event.key === 'Enter' && inputFields[target.id]) {
       event.preventDefault();
-      if (!event.repeat) { drafts.edit(inputFields[target.id], target.value); commit(); target.blur(); }
+      if (!event.repeat) { drafts.edit(inputFields[target.id], target.value); if (commit()) closeEditor(); }
       return;
     }
     const space = event.key === ' ' || event.code === 'Space';
     if (event.repeat && (space || event.key === 'Enter') && target.closest?.('.practice-actions, .done-actions, .deck-footer')) {
       event.preventDefault(); return;
     }
-    if (target.isContentEditable || target.closest?.('input, textarea, select, button, a')) return;
+    if (target.isContentEditable || target.closest?.('input, textarea, select, button, a, summary')) return;
     if (!space) return;
     event.preventDefault();
     if (event.repeat || state.startPending) return;
     if (state.phase === 'idle' || state.phase === 'done') start();
-    else if (state.phase === 'paused') controller.resume();
+    else if (state.phase === 'paused') continueRound();
     else controller.pause();
   }
 
@@ -208,7 +229,10 @@ export function mountBrowserApp({
     if (!field) return;
     drafts.edit(field, event.target.value);
     // Changing a draft revokes a pending Start even before the field is committed.
-    if (controller.getState().startPending) controller.stop();
+    if (controller.getState().startPending) {
+      if (controller.getState().phase === 'idle') controller.stop();
+      else controller.setBpm(controller.getState().bpm);
+    }
     drafts.read(controller.getState());
     paint();
   });
@@ -224,7 +248,7 @@ export function mountBrowserApp({
   }, { passive: false });
   documentTarget.addEventListener('keydown', handleKey);
   documentTarget.addEventListener('click', event => {
-    if (root.contains(event.target) && event.target.closest('button, .header-popover')) return;
+    if (event.composedPath().includes(root) && event.target.closest('button, .header-popover')) return;
     if (openPopover) { openPopover = ''; paint(); }
   });
   documentTarget.addEventListener('visibilitychange', () => {

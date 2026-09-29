@@ -30,7 +30,8 @@ import {
   getRoundClickCount,
 } from './round.js';
 
-export const PROMPT_DECK_LABELS = ['B#', 'C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'E#', 'Fb', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B', 'Cb'];
+const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+export const PROMPT_DECK_LABELS = NOTE_LETTERS.flatMap(letter => [letter, `${letter}b`, `${letter}#`]);
 
 import { FRET_RANGE_ERROR } from './browser/setup-drafts.js';
 export { FRET_RANGE_ERROR };
@@ -87,7 +88,7 @@ function renderLocationModeControls(locationMode = DEFAULT_LOCATION_MODE) {
     .map((mode) => {
       const label = mode === 'all-in-range' ? 'All in range' : 'One per string';
       const description = mode === 'all-in-range'
-        ? 'Any fret on any selected string within the range.'
+        ? 'Every matching location on each selected string, lowest fret first.'
         : 'One target per selected string within the range.';
       const selectedClass = locationMode === mode ? ' is-selected' : '';
       return `<button class="choice-row${selectedClass}" type="button" data-location-mode="${escapeAttributeValue(mode)}" aria-pressed="${locationMode === mode}"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(description)}</span></button>`;
@@ -148,19 +149,18 @@ function renderBrand() {
   return `<button id="brand-home-button" class="app-brand" type="button"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span><span class="visually-hidden"> — return to setup</span></button>`;
 }
 
-function renderDrillCell(id, label, value, openPopover) {
+function renderDrillCell(id, label, value, openPopover, error = '') {
   const isOpen = openPopover === id;
-  return `<button class="drill-cell${isOpen ? ' is-open' : ''}" type="button" data-popover-target="${escapeAttributeValue(id)}" aria-expanded="${isOpen}"><span class="drill-cell-label">${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><span class="drill-cell-chevron" aria-hidden="true">⌄</span></button>`;
+  return `<button class="drill-cell${isOpen ? ' is-open' : ''}" type="button" data-popover-target="${escapeAttributeValue(id)}" aria-expanded="${isOpen}"${error ? ' aria-invalid="true"' : ''}><span class="drill-cell-label">${escapeHtml(label)}${error ? ' · Check' : ''}</span><strong>${escapeHtml(value)}</strong><span class="drill-cell-chevron" aria-hidden="true">⌄</span></button>`;
 }
 
-function renderDrillHeader(setup, renderFretRange, openPopover = '') {
+function renderDrillHeader(setup, renderFretRange, openPopover = '', errors = {}) {
   return `<section class="drill-header" aria-label="Drill setup">
-${renderDrillCell('bpm', 'BPM', setup.bpm, openPopover)}
-${renderDrillCell('fret-range', 'Frets', getFretRangeLabel(isValidFretRange(renderFretRange) ? renderFretRange : setup.fretRange), openPopover)}
+${renderDrillCell('bpm', 'BPM', setup.bpm, openPopover, errors.bpm)}
+${renderDrillCell('fret-range', 'Frets', getFretRangeLabel(isValidFretRange(renderFretRange) ? renderFretRange : setup.fretRange), openPopover, errors.fretRange)}
 ${renderDrillCell('strings', 'Strings', getStringSummary(setup.tuning, setup.selectedStringIndexes), openPopover)}
-${renderDrillCell('tuning', 'Tuning', getTuningLabel(setup.tuning), openPopover)}
+${renderDrillCell('tuning', 'Tuning', getTuningLabel(setup.tuning), openPopover, errors.tuning)}
 ${renderDrillCell('targets', 'Targets', getLocationModeLabel(setup.locationMode), openPopover)}
-<div class="drill-cell drill-cell-static" aria-label="Order Shuffled"><span class="drill-cell-label">Order</span><strong>Shuffled</strong></div>
 </section>`;
 }
 
@@ -172,11 +172,15 @@ function renderBpmControls(setup, draft) {
     return `<button${selectedClass} type="button" data-bpm="${bpm}" aria-pressed="${setup.bpm === bpm ? 'true' : 'false'}">${bpm}</button>`;
   }).join('');
 
-  return `<div class="bpm-field" aria-label="BPM value"><input id="bpm" name="bpm" type="number" inputmode="numeric" enterkeyhint="done" aria-label="BPM" min="${BPM_MIN}" max="${BPM_MAX}" step="1" value="${escapeAttributeValue(draft ?? setup.bpm)}"><div class="bpm-stepper"><button class="bpm-stepper-button" type="button" data-bpm-step="1" aria-label="Increase BPM">⌃</button><button class="bpm-stepper-button" type="button" data-bpm-step="-1" aria-label="Decrease BPM">⌄</button></div></div><div class="bpm-quick-label">Quick pick</div><div class="quick-picks" aria-label="BPM quick picks">${quickPickButtons}</div>`;
+  return `<div class="bpm-field" aria-label="BPM value"><button class="bpm-stepper-button" type="button" data-bpm-step="-1" aria-label="Decrease BPM">−</button><input id="bpm" name="bpm" type="number" inputmode="numeric" enterkeyhint="done" aria-label="BPM" min="${BPM_MIN}" max="${BPM_MAX}" step="1" value="${escapeAttributeValue(draft ?? setup.bpm)}"><button class="bpm-stepper-button" type="button" data-bpm-step="1" aria-label="Increase BPM">+</button></div><div class="quick-picks" aria-label="BPM quick picks">${quickPickButtons}</div>`;
+}
+
+function renderEditor(id, title, body, openPopover) {
+  return `<div class="header-popover" role="dialog" aria-label="${escapeAttributeValue(title)}" data-popover="${escapeAttributeValue(id)}"${openPopover === id ? ' data-open="true"' : ''}><div class="editor-heading"><h2>${escapeHtml(title)}</h2><button type="button" data-close-editor>Done</button></div>${body}</div>`;
 }
 
 function renderHeaderPopovers(setup, renderFretRange, fretRangeError = '', openPopover = '', drafts = {}) {
-  const popover = (id, title, body) => `<div class="header-popover" role="dialog" aria-label="${escapeAttributeValue(title)}" data-popover="${escapeAttributeValue(id)}"${openPopover === id ? ' data-open="true"' : ''}><h2>${escapeHtml(title)}</h2>${body}</div>`;
+  const popover = (id, title, body) => renderEditor(id, title, body, openPopover);
   return `<div class="header-popovers" aria-live="polite">
 ${popover('bpm', 'BPM', renderBpmControls(setup, drafts.bpm))}
 ${popover('fret-range', 'Fret range', renderFretRangeControls(renderFretRange, fretRangeError))}
@@ -204,14 +208,14 @@ function renderPromptDeck(selectedLabels, fretRange = DEFAULT_FRET_RANGE, bpm = 
     })
     .join('');
   const clearButton = '<button class="preset-button ghost" type="button" data-preset="clear">Clear all</button>';
-  const noteButtons = PROMPT_DECK_LABELS.map((label) => {
+  const noteButtons = NOTE_LETTERS.map(letter => `<div class="note-group" role="group" aria-label="${letter} spellings">${[letter, `${letter}b`, `${letter}#`].map((label) => {
     const isSelected = selected.has(label);
     const selectedClass = isSelected ? ' is-selected' : '';
     return `<button class="note-pill${selectedClass}" type="button" data-note-label="${escapeAttributeValue(label)}" aria-pressed="${isSelected}">${escapeHtml(label)}</button>`;
-  }).join('');
+  }).join('')}</div>`).join('');
 
   return `<section class="prompt-deck" aria-label="Note prompt deck">
-<div class="deck-heading"><h2>Notes to practice</h2><p class="note-pool-summary">${escapeHtml(getSetupSummary(selectedLabels, fretRange, bpm, locationMode, tuning, selectedStringIndexes))}</p></div>
+<div class="deck-heading"><h2>Notes to practice</h2><p class="note-pool-summary">${escapeHtml(getSetupSummary(selectedLabels, fretRange, bpm, locationMode, tuning, selectedStringIndexes))} · shuffled</p></div>
 <div class="deck-tools"><div class="preset-row" aria-label="Note pool presets">${presetButtons}</div>${clearButton}</div>
 <div class="note-grid">${noteButtons}</div>
 <footer class="deck-footer"><button id="start-button" class="primary-action" type="button"${startDisabled ? ' disabled aria-disabled="true"' : ''}>${escapeHtml(view?.primaryButton ?? 'Start')}</button></footer>
@@ -228,26 +232,22 @@ function renderShortcutBar(phase) {
   return `<footer class="app-footer"><p class="shortcut-hint"><span class="shortcut-plain">SPACE ${primary} · ESC ${esc}</span><kbd>SPACE</kbd> ${primary} <span>·</span> <kbd>ESC</kbd> ${esc}</p>${home}</footer>`;
 }
 
-function renderPracticeContext(setup) {
-  const rows = [
-    ['BPM', setup.bpm],
-    ['Frets', getFretRangeLabel(setup.fretRange)],
-    ['Strings', getStringSummary(setup.tuning, setup.selectedStringIndexes)],
-    ['Tuning', getTuningLabel(setup.tuning)],
-    ['Targets', getLocationModeLabel(setup.locationMode)],
-    ['Order', 'Shuffled'],
-  ].map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
-
-  return `<section class="practice-context" aria-label="Current drill setup">${rows}</section>`;
+function renderPracticeContext(setup, phase) {
+  const tempo = ['paused', 'done'].includes(phase)
+    ? `<button type="button" data-popover-target="bpm" aria-expanded="${setup.openPopover === 'bpm'}"${setup.fieldErrors?.bpm ? ' aria-invalid="true"' : ''}>${setup.bpm} BPM <span aria-hidden="true">⌄</span></button>`
+    : `<span class="practice-tempo">${setup.bpm} BPM</span>`;
+  return `<section class="practice-context" aria-label="Current drill setup"><div class="context-line">${tempo}<span>Frets ${escapeHtml(getFretRangeLabel(setup.fretRange))}</span></div><details class="context-details"><summary>Setup details</summary><p>Strings ${escapeHtml(getStringSummary(setup.tuning, setup.selectedStringIndexes))}<br>Tuning ${escapeHtml(getTuningLabel(setup.tuning))}<br>Targets ${escapeHtml(getLocationModeLabel(setup.locationMode))} · Shuffled</p></details></section>`;
 }
 
 function renderPracticeStage(content, setup, phase, feedback) {
+  const editor = ['paused', 'done'].includes(phase) ? renderEditor('bpm', 'BPM', renderBpmControls(setup, setup.drafts?.bpm), setup.openPopover) : '';
   return `<main class="app-shell app-shell-practice">
 <div class="practice-stage">
 <div class="setup-app-bar practice-app-bar">
 ${renderBrand()}
 </div>
-${renderPracticeContext(setup)}
+${renderPracticeContext(setup, phase)}
+<div class="practice-editor">${editor}</div>
 ${content}
 ${feedback}
 ${renderShortcutBar(phase)}
@@ -263,7 +263,7 @@ export function renderHtml(
   if (setupInput === null || typeof setupInput !== 'object' || Array.isArray(setupInput)) {
     throw new TypeError('renderHtml expects a setup object');
   }
-  const setup = createSetup(setupInput);
+  const setup = { ...createSetup(setupInput), openPopover: setupInput.openPopover, drafts: setupInput.drafts, fieldErrors: setupInput.fieldErrors };
   const renderFretRange = Object.hasOwn(setupInput, 'renderFretRange') ? setupInput.renderFretRange : setup.fretRange;
   const {
     bpm,
@@ -277,7 +277,9 @@ export function renderHtml(
   const fretRangeError = setupInput.fieldErrors?.fretRange || (error === FRET_RANGE_ERROR ? error : '');
   const startDisabled = Boolean(setupInput.startPending || (setupInput.invalidDraft ?? !isValidFretRange(renderFretRange)));
   const errorHtml = error && error !== FRET_RANGE_ERROR ? `<p class="error" role="alert">${escapeHtml(error)}</p>` : '';
-  const feedback = `<div id="app-feedback">${errorHtml}${setupInput.startPending ? '<p role="status">Starting audio…</p><button id="cancel-start-button" type="button">Cancel</button>' : ''}</div>`;
+  const hiddenErrors = [['bpm', 'BPM', setupInput.fieldErrors?.bpm], ['fret-range', 'Frets', fretRangeError], ['tuning', 'Tuning', setupInput.fieldErrors?.tuning]].filter(([id,, message]) => message && id !== openPopover);
+  const recovery = hiddenErrors.map(([id, label, message]) => `<div class="draft-recovery" role="alert"><p>${escapeHtml(message)}</p><button type="button" data-recover-editor="${id}">Fix ${label}</button></div>`).join('');
+  const feedback = `<div id="app-feedback">${recovery}${hiddenErrors.some(([, , message]) => message === error) ? '' : errorHtml}${setupInput.startPending ? '<p role="status">Starting audio…</p><button id="cancel-start-button" type="button">Cancel</button>' : ''}</div>`;
 
   if (view.phase === 'idle') {
     return `<main class="app-shell app-shell-setup">
@@ -285,11 +287,12 @@ export function renderHtml(
 <div class="setup-app-bar">
 ${renderBrand()}
 </div>
-${renderDrillHeader(setup, renderFretRange, openPopover)}
+${renderDrillHeader(setup, renderFretRange, openPopover, setupInput.fieldErrors)}
 ${renderHeaderPopovers(setup, renderFretRange, fretRangeError, openPopover, setupInput.drafts)}
 <p class="visually-hidden">${escapeHtml(view.prompt)}</p>
 ${renderPromptDeck(selectedLabels, fretRange, bpm, locationMode, tuning, selectedStringIndexes, view, startDisabled)}
 ${feedback}
+<details class="quick-help"><summary>Quick reference</summary><p>Play the displayed note on the indicated string with each click, from the lowest string to the highest. The app keeps time; it does not check your playing or show answer frets.</p><p><strong>One per string:</strong> one location on each available string. <strong>All in range:</strong> find every matching location, lowest fret first. Written spellings are separate prompts.</p><p><strong>Repeat</strong> keeps the sequence; <strong>Shuffle</strong> makes a new order. Change BPM while paused or after finishing. Space controls playback when you are not focused on a control. Escape closes an editor or exits the drill.</p></details>
 ${renderShortcutBar(view.phase)}
 </div>
 </main>`;
@@ -311,7 +314,7 @@ ${renderShortcutBar(view.phase)}
     : '<p class="practice-status" aria-hidden="true"></p>';
   const renderCueRow = () => `<div class="practice-cue-row"><div class="practice-string" aria-label="Current string"><strong>${escapeHtml(view.stringCue)}</strong></div><div class="beat-meter" aria-label="Beat ${escapeAttributeValue(beatValue)}"><strong>${escapeHtml(beatValue)}</strong></div></div>`;
   const noteProgress = `<div class="note-progress-rail" aria-label="Note progress">${progressChips}</div>`;
-  const controls = `<div class="actions practice-actions">${view.showPause ? '<button id="pause-button" class="secondary-action" type="button">Pause</button>' : ''}${view.showResume ? '<button id="resume-button" class="secondary-action" type="button">Resume</button>' : ''}${view.showRestart ? '<button id="restart-button" class="secondary-action" type="button">Restart</button>' : ''}${view.showStop ? '<button id="stop-button" class="danger-action" type="button">Stop</button>' : ''}</div>`;
+  const controls = `<div class="actions practice-actions">${view.showPause ? '<button id="pause-button" class="secondary-action" type="button">Pause</button>' : ''}${view.showResume ? '<button id="resume-button" class="secondary-action" type="button">Resume</button>' : ''}${view.showRestart ? '<button id="restart-button" class="secondary-action" type="button">Restart</button>' : '<span class="transport-reserve" aria-hidden="true"></span>'}${view.showStop ? '<button id="stop-button" class="danger-action" type="button">Stop</button>' : ''}</div>`;
 
   if (view.phase === 'done') {
     const sameOrderButton = view.showSameOrder

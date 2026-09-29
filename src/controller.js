@@ -242,6 +242,7 @@ export function createAppController({
         clearTimer();
       }
       state = { ...state, bpm, startPending: false };
+      if (state.phase === 'paused' && nextState) nextState = { ...nextState, bpm };
       if (shouldRender) renderCurrent();
     },
     start,

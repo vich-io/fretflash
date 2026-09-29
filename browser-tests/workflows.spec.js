@@ -88,7 +88,9 @@ test('round journey: distinct spellings, Pause/Restart, Done/Repeat, Shuffle and
   await expect(page.locator('.practice-countin')).toBeVisible();
   expect(await page.locator('.progress-cell').allTextContents()).toEqual(order);
   await expect(page.locator('.practice-done')).toBeVisible();
-  await expect(page.locator('input')).toHaveCount(0);
+  await expect(page.locator('input:visible')).toHaveCount(0);
+  await expect(page.locator('input')).toHaveCount(1);
+  await expect(page.locator('#bpm')).toHaveValue('240');
   await page.locator('#same-order-button').click();
   await expect(page.locator('.practice-countin')).toBeVisible();
   expect(await page.locator('.progress-cell').allTextContents()).toEqual(order);

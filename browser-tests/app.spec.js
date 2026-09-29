@@ -184,7 +184,7 @@ test('selected artwork, semantic fonts, ordered spellings, and no answer frets',
   expect(await selected.body()).toEqual(await (await import('node:fs/promises')).readFile('assets/icons/fretflash-six-line-f.svg'));
   expect(await page.locator('body').evaluate(el => getComputedStyle(el).fontFamily)).toMatch(/^Inter,/);
   expect(await page.locator('.home-link').evaluate(el => getComputedStyle(el).fontFamily)).toContain('SFMono-Regular');
-  expect(await page.locator('.note-pill').allTextContents()).toEqual('B# C C# Db D D# Eb E E# Fb F F# Gb G G# Ab A A# Bb B Cb'.split(' '));
+  expect(await page.locator('.note-pill').allTextContents()).toEqual('C Cb C# D Db D# E Eb E# F Fb F# G Gb G# A Ab A# B Bb B#'.split(' '));
   await page.locator('[data-popover-target="targets"]').click();
   await page.locator('[data-location-mode="all-in-range"]').click();
   await page.locator('[data-popover-target="fret-range"]').click();
