@@ -3,14 +3,33 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="FretFlash is a tiny guitar fretboard note-recall drill: choose note prompts, play them across the strings to a click, and build faster recall.">
     <title>FretFlash</title>
+    <meta name="theme-color" content="#191919">
+    <link rel="preload" href="assets/fonts/inter-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="license" href="assets/fonts/OFL.txt" type="text/plain" title="Inter font — SIL Open Font License 1.1">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/fretflash-six-line-f.svg">
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <main id="app" class="app-shell">
-      <h1>FretFlash</h1>
-      <p>Loading…</p>
-    </main>
+    <div id="app"></div>
+    <noscript>
+      <main class="app-shell app-shell-setup">
+        <div class="setup-launcher">
+          <div class="setup-app-bar">
+            <div class="app-brand" aria-label="FretFlash">
+              <img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg" alt="" aria-hidden="true" width="28" height="28">
+              <span class="brand-wordmark">fretflash.</span>
+            </div>
+          </div>
+          <section class="prompt-deck" aria-label="JavaScript required">
+            <div class="deck-heading">
+              <h2>JavaScript is required to run the drill.</h2>
+            </div>
+          </section>
+        </div>
+      </main>
+    </noscript>
     <script type="module" src="app.js"></script>
   </body>
 </html>
