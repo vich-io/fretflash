@@ -213,6 +213,8 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { appearance:
 .error, .field-error { color: var(--danger); font-size: 0.85rem; font-weight: 400; padding: 0.6rem 0.75rem; border-left: 2px solid var(--danger); }
 .error { margin: 0; }
 .field-error { margin: 1rem 0 0; }
+#app-feedback:empty { display: none; }
+#app-feedback [role="status"] { color: var(--muted); font-size: 0.85rem; }
 
 .app-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; min-height: 2.75rem; }
 .home-link { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0.25rem; color: var(--muted); font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 0.8rem; text-decoration: none; }
@@ -247,7 +249,7 @@ kbd { font: inherit; padding: 0.15rem 0.3rem; border: 1px solid var(--line); bor
 .practice-string strong, .beat-meter strong { font-size: 0.85rem; font-weight: 400; }
 .practice-string strong { color: var(--text); }
 .beat-meter strong { color: var(--muted); border-left: 1px solid var(--line); padding-left: 0.75rem; }
-.beat-meter-slot { min-width: 3.5rem; visibility: hidden; }
+
 .is-reserved { visibility: hidden; }
 .current-note { display: grid; gap: 0.4rem; }
 .hero-label { min-height: 1.5em; color: var(--muted); font-size: 0.8rem; }
@@ -303,4 +305,18 @@ kbd { font: inherit; padding: 0.15rem 0.3rem; border: 1px solid var(--line); bor
   .current-note strong { font-size: 6rem; }
   .current-note-done strong { font-size: 3rem; }
   .next-note strong { font-size: 1.6rem; }
+}
+
+/* In landscape, practice cues and transport take priority over setup metadata. */
+@media (max-height: 440px) and (min-width: 480px) {
+  .app-shell-practice { padding: 0.5rem 1rem; }
+  .practice-stage { gap: 0.25rem; }
+  .practice-app-bar, .practice-context, .app-shell-practice .app-footer { display: none; }
+  .practice-display { grid-template-rows: 1rem 1.5rem minmax(5rem, auto) 2.6rem auto 3rem; gap: 0.2rem; }
+  .practice-status { min-height: 1rem; }
+  .current-note strong { font-size: 4rem; }
+  .current-note-done strong { font-size: 3rem; }
+  .hero-label { font-size: 0.7rem; }
+  .next-note strong { font-size: 1.25rem; }
+  .practice-actions, .done-actions { margin-top: 0; }
 }

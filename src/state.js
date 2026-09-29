@@ -24,6 +24,7 @@ export function createIdleState(
 
   return {
     phase: 'idle',
+    startPending: false,
     bpm: setup.bpm,
     order: [],
     selectedLabels: setup.selectedLabels,
@@ -63,10 +64,20 @@ export function startRound(setupInput, createOrder = shuffleSelectedLabels) {
     setup.selectedStringIndexes,
   );
 
+  return startPreparedRound(setup, order);
+}
+
+// The controller already generated and validated this order before preparing audio.
+export function startPreparedRound(setupInput, preparedOrder) {
+  const setup = createSetup(setupInput);
+  if (!isValidBpm(setup.bpm) || !Array.isArray(preparedOrder) || preparedOrder.length === 0) {
+    throw new Error('A valid BPM and nonempty prepared order are required');
+  }
   return {
     phase: 'countin',
+    startPending: false,
     bpm: setup.bpm,
-    order,
+    order: cloneGeneratedOrder(preparedOrder),
     selectedLabels: [...setup.selectedLabels],
     fretRange: cloneFretRange(setup.fretRange),
     locationMode: setup.locationMode,

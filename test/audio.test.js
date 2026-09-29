@@ -3,6 +3,22 @@ import assert from 'node:assert/strict';
 
 import { createWebAudioClickPlayer } from '../src/audio.js';
 
+test('future click can be cancelled before it sounds', () => {
+  const starts = [];
+  const stops = [];
+  const player = createWebAudioClickPlayer(class {
+    constructor() { this.currentTime = 3; this.state = 'running'; this.destination = {}; }
+    createOscillator() { return { frequency: { setValueAtTime() {} }, connect() {}, start: (at) => starts.push(at), stop: (at) => stops.push(at), disconnect() {} }; }
+    createGain() { return { gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {}, cancelScheduledValues() {} }, connect() {}, disconnect() {} }; }
+  });
+  player.prepare();
+  assert.equal(player.now(), 3);
+  const handle = player.play({ accent: true, when: 4 });
+  assert.deepEqual(starts, [4]);
+  player.cancel(handle);
+  assert.ok(stops.some((at) => at <= 3));
+});
+
 // Web Audio click player
 test('createWebAudioClickPlayer prepare fails when AudioContext is unavailable', () => {
   const player = createWebAudioClickPlayer(undefined);

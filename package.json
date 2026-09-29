@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "test:browser": "playwright test",
+    "check:runtime": "node scripts/check-runtime.mjs",
+    "verify:public": "node scripts/verify-public.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
   }
 }

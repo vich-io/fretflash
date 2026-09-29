@@ -87,6 +87,7 @@ export function normalizeSelectedStringIndexes(indexes, stringCount) {
 }
 
 export function isValidNoteSelection(labels) {
+  // Written enharmonic spellings are independent prompts.
   if (!Array.isArray(labels) || labels.length === 0) {
     return false;
   }
@@ -176,6 +177,13 @@ function withTuning(settings, tuning, selectedStringIndexes) {
   };
 }
 
+function isValidSavedStringSelection(indexes, tuning) {
+  const count = cloneTuning(tuning).strings.length;
+  return Array.isArray(indexes) && indexes.length > 0
+    && new Set(indexes).size === indexes.length
+    && indexes.every(index => Number.isInteger(index) && index >= 0 && index < count);
+}
+
 export function parseSavedSettings(raw) {
   try {
     const parsed = JSON.parse(raw);
@@ -188,6 +196,7 @@ export function parseSavedSettings(raw) {
       || !isValidFretRange(parsed.fretRange)
       || !isValidLocationMode(parsed.locationMode)
       || !isValidSavedTuning(parsed.tuning)
+      || !isValidSavedStringSelection(parsed.selectedStringIndexes, parsed.tuning)
     ) {
       return null;
     }
@@ -223,6 +232,8 @@ export function saveSettings(storage, state) {
     || !isValidNoteSelection(state.selectedLabels)
     || !isValidFretRange(state.fretRange)
     || !isValidLocationMode(state.locationMode)
+    || !isValidSavedTuning(state.tuning)
+    || !isValidSavedStringSelection(state.selectedStringIndexes, state.tuning)
   ) {
     return;
   }
@@ -235,10 +246,7 @@ export function saveSettings(storage, state) {
       fretRange: cloneFretRange(state.fretRange),
       locationMode: state.locationMode,
       tuning: cloneTuning(state.tuning),
-      selectedStringIndexes: normalizeSelectedStringIndexes(
-        state.selectedStringIndexes,
-        cloneTuning(state.tuning).strings.length,
-      ),
+      selectedStringIndexes: [...state.selectedStringIndexes].sort((a, b) => a - b),
     }));
   } catch {
     // Persistence is a convenience only. The app must remain usable without it.

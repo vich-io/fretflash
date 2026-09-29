@@ -125,6 +125,16 @@ test('settings module restores only current saved payloads and falls back otherw
   assert.equal(parseSavedSettings(JSON.stringify(settingsPayload({ tuning: { id: 'custom', strings: ['C', 'D'] } }))), null);
 });
 
+test('malformed saved string subsets are rejected rather than broadened', () => {
+  for (const selectedStringIndexes of [[99], [], [0, 0], [0, 6], 'all', null]) {
+    const payload = settingsPayload({ bpm: 90, selectedStringIndexes });
+    assert.equal(parseSavedSettings(JSON.stringify(payload)), null);
+    const storage = createMemoryStorage();
+    saveSettings(storage, payload);
+    assert.equal(storage.getItem(SETTINGS_STORAGE_KEY), null);
+  }
+});
+
 test('settings module loads defaults and saves current-only payloads', () => {
   const storage = createMemoryStorage();
   assert.deepEqual(loadSettings(storage), createSetup());

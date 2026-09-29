@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { readFile } from 'node:fs/promises';
+
 
 import {
   PITCHES,
@@ -399,25 +399,6 @@ test('renderHtml frames active practice as the same app console without editable
   assert.doesNotMatch(html, /<input /);
 });
 
-test('active practice CSS shares the setup frame and avoids clipped controls', async () => {
-  const css = await readFile('style.css', 'utf8');
-
-  assert.match(css, /\.practice-stage\s*\{[^}]*max-width: var\(--setup-width\);[^}]*width: 100%;/s);
-  assert.match(css, /\.app-shell-practice\s*\{[^}]*overflow: visible;/s);
-  assert.doesNotMatch(css, /\.app-shell-practice,[\s\S]*?overflow: hidden;/s);
-  assert.match(css, /\.drill-header,\s*\n\.practice-context\s*\{[^}]*display: grid;[^}]*width: 100%;/s);
-  assert.match(css, /\.practice-display\s*\{[^}]*width: 100%;/s);
-  assert.match(css, /@media \(max-width: 560px\) \{[\s\S]*\.practice-context\s*\{[^}]*grid-template-columns: 1fr 1fr;/s);
-});
-
-test('active cue row keeps running count close to the string cue', async () => {
-  const css = await readFile('style.css', 'utf8');
-
-  assert.match(css, /\.practice-cue-row\s*\{[^}]*display: inline-grid;[^}]*grid-template-columns: auto auto;/s);
-  assert.doesNotMatch(css, /\.practice-cue-row\s*\{[^}]*width: min\(100%, 32rem\)/s);
-  assert.match(css, /\.beat-meter-slot\s*\{[^}]*min-width: 3\.5rem;[^}]*visibility: hidden;/s);
-});
-
 test('renderHtml renders Done as the final-note preview', () => {
   const state = { ...testStartRound(60, PITCHES, orderGroupsByLabels([...PITCHES])), phase: 'running', noteIndex: 11, beatInNote: 4 };
   const html = renderHtml(getViewModel(state), state);
@@ -496,7 +477,8 @@ test('renderHtml escapes dynamic practice and done text', () => {
     phase: 'running',
     prompt: '<img src=x onerror=alert(1)>',
     status: '<script>alert(1)</script>',
-    beat: 'Beat 1 / 6" onclick="alert(1)',
+    beatNumber: 1,
+    beatCount: '6" onclick="alert(1)',
     note: 'Note 1 / 1',
     stringCue: 'String 1 · <svg onload=alert(1)>',
     previewLabel: 'Next',

@@ -35,7 +35,7 @@ test('state and view-model modules own drill transitions and display derivation'
   const state = startRound({ bpm: 60, selectedLabels: ['C'], fretRange: { from: 0, to: 12 } }, (items) => items);
 
   assert.equal(state.phase, 'countin');
-  assert.equal(getViewModel(state).status, 'Count-in: 4 / 4');
+  assert.equal(getViewModel(state).countdown, 4);
 
   let advanced = state;
   for (let tick = 0; tick < 4; tick += 1) {

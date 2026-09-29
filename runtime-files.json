@@ -1,0 +1,19 @@
+{
+  "files": [
+    "index.html",
+    "style.css",
+    "app.js",
+    "src/audio.js",
+    "src/browser/setup-drafts.js",
+    "src/controller.js",
+    "src/music.js",
+    "src/render.js",
+    "src/round.js",
+    "src/settings.js",
+    "src/state.js",
+    "src/view-model.js",
+    "assets/fonts/inter-latin-variable.woff2",
+    "assets/fonts/OFL.txt",
+    "assets/icons/fretflash-six-line-f.svg"
+  ]
+}

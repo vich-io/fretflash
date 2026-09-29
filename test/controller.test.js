@@ -125,6 +125,113 @@ test('createAppController preserves valid BPM when note selection is empty', () 
   assert.equal(harness.renders.at(-1).state.bpm, 80);
 });
 
+test('pause and resume retain the last audible cue while the next cue waits a full interval', () => {
+  const harness = createControllerHarness();
+  harness.controller.start('60');
+  for (let i = 0; i < 5; i += 1) harness.scheduled.callback();
+  const displayed = getViewModel(harness.renders.at(-1).state);
+  const before = harness.clicks.length;
+  harness.controller.pause();
+  assert.equal(getViewModel(harness.controller.getState()).stringCue, displayed.stringCue);
+  assert.equal(getViewModel(harness.controller.getState()).beatNumber, displayed.beatNumber);
+  harness.controller.resume();
+  assert.equal(getViewModel(harness.controller.getState()).stringCue, displayed.stringCue);
+  assert.equal(harness.clicks.length, before);
+  harness.scheduled.callback();
+  assert.equal(harness.clicks.length, before + 1);
+  assert.notEqual(getViewModel(harness.controller.getState()).beatNumber, displayed.beatNumber);
+});
+
+test('setSetup is atomic and a rejected idle Start revokes pending preparation without affecting active timer', async () => {
+  const renders = [];
+  const clicks = [];
+  let resolvePrepare;
+  let scheduled;
+  const controller = createAppController({
+    render: (state, error) => renders.push({ state, error }),
+    playClick: (options) => clicks.push(options),
+    prepareAudio: () => new Promise((resolve) => { resolvePrepare = resolve; }),
+    setIntervalFn: (callback) => { scheduled = callback; return 1; },
+    clearIntervalFn: () => {},
+  });
+  controller.setSetup({ bpm: 72, selectedLabels: ['C'], fretRange: { from: 0, to: 12 }, locationMode: 'one-per-string', tuning: defaultTuningSettings().tuning, selectedStringIndexes: [1, 2] });
+  assert.equal(renders.length, 1);
+  assert.deepEqual(controller.getState().selectedStringIndexes, [1, 2]);
+  const pending = controller.start('72');
+  assert.equal(controller.getState().startPending, true);
+  assert.equal(controller.start('bad'), false);
+  assert.equal(controller.getState().startPending, false);
+  resolvePrepare();
+  assert.equal(await pending, false);
+  assert.equal(clicks.length, 0);
+  const ready = controller.start('72');
+  resolvePrepare();
+  assert.equal(await ready, true);
+  const count = clicks.length;
+  assert.equal(controller.start('bad'), false);
+  scheduled();
+  assert.equal(clicks.length, count + 1);
+});
+
+test('setSetup accepts editable empty note selection and rejects malformed setup without disrupting active timer', () => {
+  const harness = createControllerHarness();
+  const setup = { ...harness.controller.getState(), selectedLabels: [] };
+  assert.equal(harness.controller.setSetup(setup), true);
+  assert.deepEqual(harness.controller.getState().selectedLabels, []);
+  assert.equal(harness.controller.start('60'), false);
+  assert.equal(harness.controller.setSetup({ ...setup, selectedLabels: ['C'] }), true);
+  harness.controller.start('60');
+  const timer = harness.scheduled;
+  const before = harness.clicks.length;
+  assert.equal(harness.controller.setSetup({ ...setup, tuning: { id: 'custom', strings: ['X'] } }), false);
+  assert.equal(harness.controller.setSetup({ ...setup, selectedStringIndexes: [-1] }), false);
+  assert.deepEqual(harness.clearedTimers, []);
+  timer.callback();
+  assert.equal(harness.clicks.length, before + 1);
+});
+
+test('one round generation per fresh Start; exact repeat and restart never regenerate', () => {
+  let generated = 0;
+  let tick;
+  const controller = createAppController({
+    render: () => {}, playClick: () => {},
+    createOrder: (groups) => { generated += 1; return groups; },
+    initialState: createIdleState({ bpm: 60, selectedLabels: ['C'] }),
+    setIntervalFn: (callback) => { tick = callback; return generated; }, clearIntervalFn: () => {},
+  });
+  controller.start('60');
+  assert.equal(generated, 1);
+  controller.pause();
+  controller.restartCurrent();
+  assert.equal(generated, 1);
+  while (controller.getState().phase !== 'done') tick();
+  controller.repeatSameOrder('60');
+  assert.equal(generated, 1);
+  controller.start('60');
+  assert.equal(generated, 2);
+});
+
+test('stale rejected audio promises do not disturb the newer pending or stopped state', async () => {
+  const rejects = [];
+  const renders = [];
+  const controller = createAppController({
+    render: (state, error) => renders.push({ state, error }), playClick: () => {},
+    prepareAudio: () => new Promise((resolve, reject) => rejects.push(reject)),
+    setIntervalFn: () => 1, clearIntervalFn: () => {},
+  });
+  const first = controller.start('60');
+  const second = controller.start('80');
+  rejects[0](new Error('stale'));
+  assert.equal(await first, false);
+  assert.equal(controller.getState().startPending, true);
+  controller.stop();
+  const count = renders.length;
+  rejects[1](new Error('stale after stop'));
+  assert.equal(await second, false);
+  assert.equal(renders.length, count);
+  assert.equal(controller.getState().startPending, false);
+});
+
 test('createAppController starts with selected labels and preserves them after stop', () => {
   const renders = [];
   const clearedTimers = [];
@@ -202,7 +309,7 @@ test('createAppController pauses count-in without further stale clicks', () => {
   assert.deepEqual(harness.clearedTimers, [1]);
   assert.equal(harness.renders.at(-1).state.phase, 'paused');
   assert.equal(harness.renders.at(-1).state.pausedFromPhase, 'countin');
-  assert.equal(harness.renders.at(-1).state.countInBeat, 2);
+  assert.equal(harness.renders.at(-1).state.countInBeat, 1);
 
   staleCallback();
 
@@ -217,7 +324,7 @@ test('createAppController pauses running and resumes the same sequence after a f
     harness.scheduled.callback();
   }
   assert.equal(harness.controller.getState().phase, 'running');
-  assert.equal(harness.controller.getState().beatInNote, 3);
+  assert.equal(harness.controller.getState().beatInNote, 2);
   const clicksBeforePause = harness.clicks.length;
 
   assert.equal(harness.controller.pause(), true);
@@ -225,19 +332,19 @@ test('createAppController pauses running and resumes the same sequence after a f
   assert.equal(pausedState.phase, 'paused');
   assert.equal(pausedState.pausedFromPhase, 'running');
   assert.equal(pausedState.noteIndex, 0);
-  assert.equal(pausedState.beatInNote, 3);
+  assert.equal(pausedState.beatInNote, 2);
   assert.equal(harness.clicks.length, clicksBeforePause);
   assert.deepEqual(harness.clearedTimers, [1]);
 
   assert.equal(harness.controller.resume(), true);
   assert.equal(harness.controller.getState().phase, 'running');
-  assert.equal(harness.controller.getState().beatInNote, 3);
+  assert.equal(harness.controller.getState().beatInNote, 2);
   assert.equal(harness.scheduled.id, 2);
   assert.equal(harness.scheduled.intervalMs, 1000);
   assert.equal(harness.clicks.length, clicksBeforePause);
 
   harness.scheduled.callback();
-  assert.equal(harness.controller.getState().beatInNote, 4);
+  assert.equal(harness.controller.getState().beatInNote, 3);
   assert.equal(harness.clicks.length, clicksBeforePause + 1);
 });
 
@@ -279,13 +386,13 @@ test('createAppController preserves fret-constrained string progress across paus
     scheduled.callback();
   }
   assert.equal(controller.getState().phase, 'running');
-  assert.equal(getViewModel(controller.getState()).stringCue, 'String 2 · B');
-  assert.equal(getViewModel(controller.getState()).beat, 'Beat 2 / 2');
+  assert.equal(getViewModel(controller.getState()).stringCue, 'String 4 · D');
+  assert.equal(getViewModel(controller.getState()).beatNumber, 1);
 
   controller.pause();
   assert.equal(controller.getState().phase, 'paused');
-  assert.equal(getViewModel(controller.getState()).stringCue, 'String 2 · B');
-  assert.equal(getViewModel(controller.getState()).beat, 'Beat 2 / 2');
+  assert.equal(getViewModel(controller.getState()).stringCue, 'String 4 · D');
+  assert.equal(getViewModel(controller.getState()).beatNumber, 1);
   assert.deepEqual(clearedTimers, [1]);
 
   controller.resume();
@@ -294,9 +401,9 @@ test('createAppController preserves fret-constrained string progress across paus
   assert.equal(scheduled.intervalMs, 1000);
   scheduled.callback();
 
-  assert.equal(controller.getState().noteIndex, 1);
-  assert.equal(controller.getState().beatInNote, 1);
-  assert.equal(getViewModel(controller.getState()).stringCue, 'String 6 · E');
+  assert.equal(controller.getState().noteIndex, 0);
+  assert.equal(controller.getState().beatInNote, 2);
+  assert.equal(getViewModel(controller.getState()).stringCue, 'String 2 · B');
   assert.equal(clicks.at(-1).accent, false);
   assert.equal(renders.at(-1).state.phase, 'running');
 });
@@ -309,14 +416,14 @@ test('createAppController restarts the same generated drill from paused', () => 
     harness.scheduled.callback();
   }
   assert.equal(harness.controller.getState().phase, 'running');
-  assert.equal(harness.controller.getState().beatInNote, 4);
+  assert.equal(harness.controller.getState().beatInNote, 3);
 
   harness.controller.pause();
   const clicksBeforeRestart = harness.clicks.length;
 
   assert.equal(harness.controller.restartCurrent(), true);
   assert.equal(harness.controller.getState().phase, 'countin');
-  assert.equal(harness.controller.getState().countInBeat, 2);
+  assert.equal(harness.controller.getState().countInBeat, 1);
   assert.equal(harness.controller.getState().noteIndex, 0);
   assert.equal(harness.controller.getState().beatInNote, 1);
   assert.deepEqual(orderLabels(harness.controller.getState().order), originalOrder);
@@ -325,7 +432,7 @@ test('createAppController restarts the same generated drill from paused', () => 
   assert.equal(harness.scheduled.intervalMs, 1000);
 
   harness.scheduled.callback();
-  assert.equal(harness.controller.getState().countInBeat, 3);
+  assert.equal(harness.controller.getState().countInBeat, 2);
   assert.deepEqual(orderLabels(harness.controller.getState().order), originalOrder);
 });
 

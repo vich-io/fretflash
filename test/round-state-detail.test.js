@@ -249,6 +249,7 @@ test('createIdleState rejects legacy positional setup arguments', () => {
 test('createIdleState returns the idle defaults', () => {
   assert.deepEqual(createIdleState(), {
     phase: 'idle',
+    startPending: false,
     bpm: DEFAULT_BPM,
     order: [],
     selectedLabels: DEFAULT_SELECTED_LABELS,
@@ -401,12 +402,14 @@ test('advanceAfterClick uses all-in-range target counts and repeated string cues
   };
 
   assert.equal(getViewModel(state).stringCue, 'String 6 · E');
-  assert.equal(getViewModel(state).beat, 'Beat 1 / 12');
+  assert.equal(getViewModel(state).beatNumber, 1);
+  assert.equal(getViewModel(state).beatCount, 12);
   state = advanceAfterClick(state);
   assert.equal(state.phase, 'running');
   assert.equal(state.beatInNote, 2);
   assert.equal(getViewModel(state).stringCue, 'String 6 · E');
-  assert.equal(getViewModel(state).beat, 'Beat 2 / 12');
+  assert.equal(getViewModel(state).beatNumber, 2);
+  assert.equal(getViewModel(state).beatCount, 12);
 
   for (let i = 0; i < 11; i += 1) {
     state = advanceAfterClick(state);
@@ -417,23 +420,23 @@ test('advanceAfterClick uses all-in-range target counts and repeated string cues
 
 test('getViewModel renders fret-constrained count-in and running progress', () => {
   const idle = getViewModel(createIdleState({ bpm: 60, selectedLabels: ['Ab', 'C'], fretRange: { from: 5, to: 9 } }));
-  assert.match(idle.status, /selected fret range/);
-  assert.equal(idle.detail, 'Frets 5–9, selected strings bottom-to-top.');
+  assert.equal(idle.prompt, 'Ready');
+  assert.equal(idle.primaryButton, 'Start');
 
   const state = testStartRound(60, ['Ab', 'C'], (groups) => groups, { fretRange: { from: 5, to: 9 } });
   const countIn = getViewModel(state);
 
   assert.equal(countIn.preview, 'Ab');
   assert.equal(countIn.stringCue, 'String 4 · D');
-  assert.equal(countIn.beat, 'Beat 1 / 2');
-  assert.equal(countIn.fretRange, 'Frets 5–9');
+  assert.equal(countIn.beatNumber, 1);
+  assert.equal(countIn.beatCount, 2);
 
   const running = getViewModel({ ...state, phase: 'running', beatInNote: 2 });
   assert.equal(running.prompt, 'Ab');
   assert.equal(running.stringCue, 'String 2 · B');
-  assert.equal(running.fretRange, 'Frets 5–9');
-  assert.equal(running.beat, 'Beat 2 / 2');
-  assert.equal(running.note, 'Note 1 / 2');
+  assert.equal(running.beatNumber, 2);
+  assert.equal(running.beatCount, 2);
+  assert.equal(running.progressIndex, 0);
   assert.equal(running.preview, 'C');
 });
 
@@ -505,15 +508,13 @@ test('getViewModel covers idle, count-in, running, and done essentials', () => {
   const idle = getViewModel(createIdleState());
   assert.equal(idle.prompt, 'Ready');
   assert.equal(idle.primaryButton, 'Start');
-  assert.equal(idle.showBpm, true);
 
   const countIn = getViewModel({ ...testStartRound(80, PITCHES, orderGroupsByLabels([...PITCHES])), countInBeat: 3 });
   assert.equal(countIn.prompt, 'Get ready');
-  assert.equal(countIn.status, 'Count-in: 2 / 4');
-  assert.equal(countIn.beat, 'Beat 1 / 6');
-  assert.equal(countIn.previewLabel, 'Starting note');
+  assert.equal(countIn.countdown, 2);
+  assert.equal(countIn.beatNumber, 1);
+  assert.equal(countIn.beatCount, 6);
   assert.equal(countIn.preview, 'C');
-  assert.equal(countIn.stringCueLabel, 'Starts on');
   assert.equal(countIn.stringCue, 'String 6 · E');
   assert.equal(countIn.showStop, true);
 
@@ -524,11 +525,10 @@ test('getViewModel covers idle, count-in, running, and done essentials', () => {
     beatInNote: 4,
   });
   assert.equal(running.prompt, 'Db');
-  assert.equal(running.beat, 'Beat 4 / 6');
-  assert.equal(running.stringCueLabel, 'Current string');
+  assert.equal(running.beatNumber, 4);
+  assert.equal(running.beatCount, 6);
   assert.equal(running.stringCue, 'String 3 · G');
-  assert.equal(running.note, 'Note 2 / 2');
-  assert.equal(running.previewLabel, 'Next');
+  assert.equal(running.progressIndex, 1);
   assert.equal(running.preview, 'Done');
 
   const doneState = testStartRound(60, PITCHES, orderGroupsByLabels([...PITCHES]));
@@ -542,7 +542,6 @@ test('getViewModel covers idle, count-in, running, and done essentials', () => {
   assert.equal(done.prompt, 'Done.');
   assert.equal(done.primaryButton, 'Shuffle');
   assert.equal(done.showSameOrder, true);
-  assert.equal(done.showBpm, true);
 });
 
 test('getViewModel maps running beats to the fixed string cue and resets on the next note', () => {
@@ -575,15 +574,15 @@ test('getViewModel displays count-in numbers descending while internal beats adv
 
   while (current.phase === 'countin') {
     const view = getViewModel(current);
-    displays.push({ status: view.status, beat: view.beat });
+    displays.push({ countdown: view.countdown, beatNumber: view.beatNumber, beatCount: view.beatCount });
     current = advanceAfterClick(current);
   }
 
   assert.deepEqual(displays, [
-    { status: 'Count-in: 4 / 4', beat: 'Beat 1 / 6' },
-    { status: 'Count-in: 3 / 4', beat: 'Beat 1 / 6' },
-    { status: 'Count-in: 2 / 4', beat: 'Beat 1 / 6' },
-    { status: 'Count-in: 1 / 4', beat: 'Beat 1 / 6' },
+    { countdown: 4, beatNumber: 1, beatCount: 6 },
+    { countdown: 3, beatNumber: 1, beatCount: 6 },
+    { countdown: 2, beatNumber: 1, beatCount: 6 },
+    { countdown: 1, beatNumber: 1, beatCount: 6 },
   ]);
   assert.equal(current.phase, 'running');
   assert.equal(current.countInBeat, 4);

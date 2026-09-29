@@ -1,449 +1,240 @@
-// Musical model and defaults
-import {
-  KNOWN_NOTE_LABELS,
-  NOTE_PRESETS,
-  TUNING_PRESET_BY_ID,
-} from './src/music.js';
-
-import {
-  BPM_MAX,
-  BPM_MIN,
-  createSetup,
-  isValidBpm,
-  isValidFretRange,
-  loadSettings,
-  parseBpmInput,
-  parseFretBoundInput,
-  parseTuningInput,
-  saveSettings,
-} from './src/settings.js';
-
-import {
-  createIdleState,
-} from './src/state.js';
+import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js';
+import { BPM_MIN, BPM_MAX, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js';
+import { createIdleState } from './src/state.js';
 import { shuffleSelectedLabels } from './src/round.js';
 import { getViewModel } from './src/view-model.js';
-
 import { renderHtml } from './src/render.js';
-
 import { createWebAudioClickPlayer } from './src/audio.js';
 import { createSetupDrafts } from './src/browser/setup-drafts.js';
 import { createAppController } from './src/controller.js';
 
-// Browser mounting and event wiring
-function getBrowserStorage() {
-  if (typeof document === 'undefined') {
-    return undefined;
-  }
+function browserStorage() {
+  try { return globalThis.localStorage; } catch { return undefined; }
+}
 
-  try {
-    return globalThis.localStorage;
-  } catch {
-    return undefined;
-  }
+// Reconcile the app's fixed markup without replacing unchanged controls or focus.
+// Handlers are delegated, so retained nodes never accumulate listeners.
+function updateChildren(parent, next) {
+  const children = [...next.childNodes];
+  children.forEach((replacement, index) => {
+    const current = parent.childNodes[index];
+    if (!current) { parent.append(replacement.cloneNode(true)); return; }
+    if (current.nodeName !== replacement.nodeName || current.id !== replacement.id) {
+      current.replaceWith(replacement.cloneNode(true)); return;
+    }
+    if (current.nodeType === 3) {
+      if (current.data !== replacement.data) current.data = replacement.data;
+      return;
+    }
+    if (current.nodeType !== 1) return;
+    for (const attribute of [...current.attributes]) {
+      if (!replacement.hasAttribute(attribute.name)) current.removeAttribute(attribute.name);
+    }
+    for (const attribute of replacement.attributes) {
+      if (current.getAttribute(attribute.name) !== attribute.value) current.setAttribute(attribute.name, attribute.value);
+    }
+    if (current.tagName === 'INPUT' && current.value !== replacement.value) current.value = replacement.value;
+    updateChildren(current, replacement);
+  });
+  while (parent.childNodes.length > children.length) parent.lastChild.remove();
 }
 
 export function mountBrowserApp({
-  root,
-  AudioContextCtor,
-  setIntervalFn = setInterval,
-  clearIntervalFn = clearInterval,
-  storage = getBrowserStorage(),
-  documentTarget = typeof document === 'undefined' ? undefined : document,
-  documentElement = documentTarget?.documentElement,
-  matchMediaFn = typeof globalThis.matchMedia === 'function' ? globalThis.matchMedia.bind(globalThis) : undefined,
-  navigatorLike = typeof globalThis.navigator === 'undefined' ? undefined : globalThis.navigator,
+  root, AudioContextCtor, storage = browserStorage(),
+  documentTarget = globalThis.document, documentElement = documentTarget?.documentElement,
+  matchMediaFn = globalThis.matchMedia?.bind(globalThis), navigatorLike = globalThis.navigator,
   createOrder = shuffleSelectedLabels,
 } = {}) {
-  if (!root) {
-    throw new Error('FretFlash root element not found');
-  }
-
-  const clickPlayer = createWebAudioClickPlayer(AudioContextCtor);
+  if (!root) throw new Error('FretFlash root element not found');
   const initialSettings = loadSettings(storage);
+  const drafts = createSetupDrafts(initialSettings);
+  const player = createWebAudioClickPlayer(AudioContextCtor);
   let controller;
-  let setupDrafts;
   let openPopover = '';
+  let actionError = '';
+  let painting = false;
+  let previousPhase = 'idle';
+  const inputFields = { bpm: 'bpm', 'fret-from': 'from', 'fret-to': 'to', 'custom-tuning': 'tuning' };
 
-  function persistCurrentSettings() {
-    saveSettings(storage, controller.getState());
+  function paint(state = controller.getState()) {
+    painting = true;
+    const html = renderHtml(getViewModel(state), {
+      ...createSetup(state), openPopover, drafts: drafts.values, fieldErrors: drafts.errors,
+      renderFretRange: { from: drafts.values.from, to: drafts.values.to },
+      invalidDraft: Boolean(drafts.errors.fretRange), startPending: Boolean(state.startPending),
+    }, actionError || (state.phase === 'idle' ? drafts.errors.bpm || drafts.errors.tuning : ''));
+    const template = documentTarget.createElement('template');
+    template.innerHTML = html;
+    if (state.startPending) {
+      for (const button of template.content.querySelectorAll('#start-button, #same-order-button, #restart-button, #resume-button')) button.disabled = true;
+    }
+    updateChildren(root, template.content);
+    if (previousPhase === 'idle' && state.phase !== 'idle') documentTarget.defaultView?.scrollTo(0, 0);
+    previousPhase = state.phase;
+    const rail = root.querySelector('.note-progress-rail');
+    const current = rail?.querySelector('[aria-current="step"]');
+    if (current) {
+      const cell = current.getBoundingClientRect(), box = rail.getBoundingClientRect();
+      if (cell.left < box.left || cell.right > box.right) rail.scrollLeft += cell.left - box.left - (box.width - cell.width) / 2;
+    }
+    painting = false;
   }
 
-  function scrollActiveProgressCellIntoView() {
-    root.querySelector('.note-progress-rail [aria-current="step"]')?.scrollIntoView({
-      block: 'nearest',
-      inline: 'center',
-    });
+  function render(state, error = '') { actionError = error; paint(state); }
+  function persist() { saveSettings(storage, controller.getState()); }
+
+  function commit(transform = setup => setup, resetFields = []) {
+    const { setup } = drafts.read(controller.getState());
+    const next = transform(setup);
+    drafts.reset(next, resetFields);
+    const result = drafts.read(next);
+    actionError = '';
+    controller.setSetup(result.setup);
+    persist();
+    return result.valid;
   }
 
-  function startFromCurrentInput() {
-    const bpmInput = root.querySelector('#bpm');
-    const bpmDraft = bpmInput ? bpmInput.value : String(controller.getState().bpm);
-    const fretResult = setupDrafts.readFretRangeFromInputs();
-    if (!fretResult.ok) {
-      setupDrafts.renderFretRangeError();
-      return false;
-    }
-    if (root.querySelector('#fret-from') && root.querySelector('#fret-to')) {
-      controller.setFretRange(fretResult.range);
-    }
-    const started = controller.start(bpmDraft);
-    if (started && typeof started.then === 'function') {
-      started.then((didStart) => {
-        if (didStart) persistCurrentSettings();
-      });
-    } else if (started) {
-      persistCurrentSettings();
-    }
-    return started;
+  function stop() {
+    drafts.reset(createSetup(controller.getState()));
+    openPopover = '';
+    controller.stop();
   }
 
-  function repeatSameOrderFromCurrentInput() {
-    const bpmInput = root.querySelector('#bpm');
-    const bpmDraft = bpmInput ? bpmInput.value : String(controller.getState().bpm);
-    if (!setupDrafts.validateFretRangeInputDraft({ renderInvalid: true })) {
-      return false;
-    }
-    const started = controller.repeatSameOrder(bpmDraft);
-    if (started && typeof started.then === 'function') {
-      started.then((didStart) => {
-        if (didStart) persistCurrentSettings();
-      });
-    } else if (started) {
-      persistCurrentSettings();
-    }
-    return started;
-  }
-
-  function shouldIgnoreGlobalShortcut(event) {
-    const target = event.target;
-    if (!target) {
-      return false;
-    }
-
-    const tagName = target.tagName?.toLowerCase();
-    return target.isContentEditable
-      || tagName === 'input'
-      || tagName === 'textarea'
-      || tagName === 'select'
-      || tagName === 'button';
-  }
-
-  function isTouchFirstEnvironment() {
-    const coarseNoHover = Boolean(matchMediaFn?.('(hover: none) and (pointer: coarse)')?.matches);
-    const uaMobile = navigatorLike?.userAgentData?.mobile === true;
-    return coarseNoHover || uaMobile;
-  }
-
-  function markKeyboardSeen(event) {
-    if (event.metaKey || event.ctrlKey || event.altKey) {
-      return;
-    }
-    documentElement?.classList?.add?.('keyboard-seen');
-  }
-
-  function handleGlobalKeydown(event) {
-    markKeyboardSeen(event);
-
-    if (event.key === 'Escape') {
-      if (openPopover) {
-        event.preventDefault();
-        openPopover = '';
-        render(controller.getState());
-        return;
-      }
-      const phase = controller.getState().phase;
-      if (phase === 'countin' || phase === 'running' || phase === 'paused' || phase === 'done') {
-        event.preventDefault();
-        controller.stop();
-      }
-      return;
-    }
-
-    if (shouldIgnoreGlobalShortcut(event)) {
-      return;
-    }
-
-    const isSpace = event.key === ' ' || event.key === 'Spacebar' || event.code === 'Space';
-    if (isSpace) {
-      const phase = controller.getState().phase;
-      if (phase === 'idle' || phase === 'done') {
-        event.preventDefault();
-        startFromCurrentInput();
-      } else if (phase === 'countin' || phase === 'running') {
-        event.preventDefault();
-        controller.pause();
-      } else if (phase === 'paused') {
-        event.preventDefault();
-        controller.resume();
-      }
-      return;
-    }
-  }
-
-  function handleDocumentClick(event) {
-    if (!openPopover) {
-      return;
-    }
-    const target = event.target;
-    if (target?.closest?.('[data-popover-target], .header-popover')) {
+  function start(repeat = false) {
+    const state = controller.getState();
+    if (state.startPending) return;
+    if (state.phase === 'idle' && !commit()) {
+      actionError = Object.values(drafts.errors).find(Boolean) || '';
+      paint();
       return;
     }
     openPopover = '';
-    render(controller.getState());
+    const started = repeat ? controller.repeatSameOrder(String(controller.getState().bpm)) : controller.start(String(controller.getState().bpm));
+    Promise.resolve(started).then(didStart => { if (didStart) persist(); });
   }
 
-  function handleRootClick(event) {
-    const target = event.target;
-    const button = target?.closest?.('button');
-    if (!button || !root.contains(button)) {
-      return;
-    }
+  function editBpm(value) {
+    const bpm = Math.max(BPM_MIN, Math.min(BPM_MAX, value));
+    commit(setup => ({ ...setup, bpm }), ['bpm']);
+  }
 
+  function handleClick(event) {
+    const button = event.target.closest('button');
+    if (!button || !root.contains(button) || button.disabled) return;
     if (button.dataset.popoverTarget) {
       openPopover = openPopover === button.dataset.popoverTarget ? '' : button.dataset.popoverTarget;
-      render(controller.getState());
+      paint(); return;
+    }
+    // An app action owns this click, including closing an outside editor.
+    if (!button.closest('.header-popover')) openPopover = '';
+    const transport = {
+      'start-button': () => start(), 'same-order-button': () => start(true),
+      'pause-button': () => controller.pause(), 'resume-button': () => controller.resume(),
+      'restart-button': () => controller.restartCurrent(), 'stop-button': stop,
+      'brand-home-button': stop, 'setup-button': stop, 'cancel-start-button': stop,
+    };
+    if (transport[button.id]) { transport[button.id](); return; }
+    const data = button.dataset;
+    if (data.bpm) { editBpm(Number(data.bpm)); return; }
+    if (data.bpmStep) { editBpm((parseBpmInput(drafts.values.bpm) ?? controller.getState().bpm) + Number(data.bpmStep)); return; }
+    if (data.fretPreset) {
+      commit(setup => ({ ...setup, fretRange: { from: Number(data.fretFrom), to: Number(data.fretTo) } }), ['fretRange']); return;
+    }
+    if (data.tuningId) {
+      const preset = TUNING_PRESET_BY_ID.get(data.tuningId);
+      if (preset) commit(setup => ({ ...setup, tuning: preset, selectedStringIndexes: preset.strings.join(' ') === setup.tuning.strings.join(' ') ? setup.selectedStringIndexes : preset.strings.map((_, i) => i) }), ['tuning']);
       return;
     }
-
-    if (button.dataset.bpm) {
-      const bpm = parseBpmInput(button.dataset.bpm);
-      if (bpm !== null) {
-        controller.setBpm(bpm);
-        persistCurrentSettings();
-      }
-      return;
+    if (data.locationMode) { commit(setup => ({ ...setup, locationMode: data.locationMode })); return; }
+    if (data.preset) { commit(setup => ({ ...setup, selectedLabels: data.preset === 'clear' ? [] : NOTE_PRESETS[data.preset] })); return; }
+    if (data.noteLabel) {
+      commit(setup => {
+        const selected = new Set(setup.selectedLabels);
+        if (selected.has(data.noteLabel)) selected.delete(data.noteLabel); else selected.add(data.noteLabel);
+        return { ...setup, selectedLabels: KNOWN_NOTE_LABELS.filter(label => selected.has(label)) };
+      }); return;
     }
-
-    if (button.dataset.bpmStep) {
-      const currentBpm = controller.getState().bpm;
-      const step = Number(button.dataset.bpmStep);
-      const nextBpm = currentBpm + step;
-      if (isValidBpm(nextBpm)) {
-        controller.setBpm(nextBpm);
-        persistCurrentSettings();
-      }
-      return;
-    }
-
-    if (button.dataset.fretPreset) {
-      const nextRange = {
-        from: parseFretBoundInput(button.dataset.fretFrom),
-        to: parseFretBoundInput(button.dataset.fretTo),
-      };
-      if (isValidFretRange(nextRange)) {
-        controller.setFretRange(nextRange);
-        persistCurrentSettings();
-      }
-      return;
-    }
-
-    if (button.id === 'start-button') {
-      startFromCurrentInput();
-      return;
-    }
-
-    if (button.id === 'brand-home-button' || button.id === 'setup-button') {
-      controller.stop();
-      return;
-    }
-
-    if (button.id === 'same-order-button') {
-      repeatSameOrderFromCurrentInput();
-      return;
-    }
-
-    if (button.id === 'pause-button') {
-      controller.pause();
-      return;
-    }
-
-    if (button.id === 'resume-button') {
-      controller.resume();
-      return;
-    }
-
-    if (button.id === 'restart-button') {
-      controller.restartCurrent();
-      return;
-    }
-
-    if (button.id === 'stop-button') {
-      controller.stop();
-      return;
-    }
-
-    if (button.dataset.noteLabel) {
-      const label = button.dataset.noteLabel;
-      const selected = new Set(controller.getState().selectedLabels);
-      if (selected.has(label)) {
-        selected.delete(label);
-      } else {
-        selected.add(label);
-      }
-      setupDrafts.applySetupEdit(() => {
-        controller.setSelectedLabels(KNOWN_NOTE_LABELS.filter((knownLabel) => selected.has(knownLabel)));
-      }, persistCurrentSettings);
-      return;
-    }
-
-    if (button.dataset.preset) {
-      setupDrafts.applySetupEdit(() => {
-        controller.setSelectedLabels(NOTE_PRESETS[button.dataset.preset] ?? controller.getState().selectedLabels);
-      }, persistCurrentSettings);
-      return;
-    }
-
-    if (button.dataset.locationMode) {
-      setupDrafts.applySetupEdit(() => {
-        controller.setLocationMode(button.dataset.locationMode);
-      }, persistCurrentSettings);
-      return;
-    }
-
-    if (button.dataset.tuningId) {
-      const preset = TUNING_PRESET_BY_ID.get(button.dataset.tuningId);
-      if (preset) {
-        setupDrafts.applySetupEdit(() => {
-          controller.setTuning({ id: preset.id, strings: preset.strings });
-        }, persistCurrentSettings);
-      }
-      return;
-    }
-
-    if (button.dataset.stringIndex) {
-      const index = Number(button.dataset.stringIndex);
-      const selected = new Set(controller.getState().selectedStringIndexes);
-      if (selected.has(index) && selected.size > 1) {
-        selected.delete(index);
-      } else {
-        selected.add(index);
-      }
-      setupDrafts.applySetupEdit(() => {
-        controller.setSelectedStringIndexes([...selected]);
-      }, persistCurrentSettings);
+    if (data.stringIndex !== undefined) {
+      commit(setup => {
+        const selected = new Set(setup.selectedStringIndexes), index = Number(data.stringIndex);
+        if (selected.has(index)) { if (selected.size > 1) selected.delete(index); } else selected.add(index);
+        return { ...setup, selectedStringIndexes: [...selected] };
+      });
     }
   }
 
-  function render(state, error = '', renderFretRange = state.fretRange) {
-    root.innerHTML = renderHtml(
-      getViewModel(state),
-      { ...createSetup(state), renderFretRange, openPopover },
-      error,
-    );
-
-    scrollActiveProgressCellIntoView();
-
-    const bpmInput = root.querySelector('#bpm');
-    if (bpmInput) {
-      bpmInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          const bpmDraft = bpmInput.value;
-          const invalidFretDraft = setupDrafts.getFretRangeInputDraft();
-          const showFretError = !setupDrafts.syncValidFretRangeFromInput({ renderInvalid: true });
-          if (setupDrafts.syncValidBpmFromInput(bpmDraft)) {
-            persistCurrentSettings();
-            if (showFretError) setupDrafts.renderFretRangeError(invalidFretDraft);
-          }
-          bpmInput.blur();
-        }
-      });
-      bpmInput.addEventListener('wheel', (event) => {
-        const currentBpm = parseBpmInput(bpmInput.value) ?? controller.getState().bpm;
-        const direction = event.deltaY < 0 ? 1 : -1;
-        const nextBpm = Math.min(BPM_MAX, Math.max(BPM_MIN, currentBpm + direction));
-        event.preventDefault();
-        if (nextBpm !== currentBpm) {
-          bpmInput.value = String(nextBpm);
-          controller.setBpm(nextBpm);
-          persistCurrentSettings();
-        }
-      });
-      bpmInput.addEventListener('blur', () => {
-        const bpmDraft = bpmInput.value;
-        const invalidFretDraft = setupDrafts.getFretRangeInputDraft();
-        const showFretError = !setupDrafts.syncValidFretRangeFromInput({ renderInvalid: true, renderValid: false });
-        if (setupDrafts.syncValidBpmFromInput(bpmDraft, { render: false })) {
-          persistCurrentSettings();
-          if (showFretError) setupDrafts.renderFretRangeError(invalidFretDraft);
-        }
-      });
-    }
-
-    ['#fret-from', '#fret-to'].forEach((selector) => {
-      const input = root.querySelector(selector);
-      if (!input) {
-        return;
+  function handleKey(event) {
+    if (event.metaKey || event.ctrlKey || event.altKey || event.isComposing) return;
+    documentElement.classList.add('keyboard-seen');
+    const state = controller.getState();
+    if (event.key === 'Escape') {
+      if (event.repeat) { event.preventDefault(); return; }
+      if (state.startPending || state.phase !== 'idle') { event.preventDefault(); stop(); return; }
+      if (openPopover) {
+        event.preventDefault(); const trigger = openPopover; openPopover = ''; paint();
+        root.querySelector(`[data-popover-target="${trigger}"]`)?.focus({ preventScroll: true });
       }
-
-      input.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          if (setupDrafts.syncValidFretRangeFromInput({ renderInvalid: true })) {
-            persistCurrentSettings();
-          }
-          input.blur();
-        }
-      });
-      input.addEventListener('blur', () => {
-        if (setupDrafts.syncValidFretRangeFromInput({ renderInvalid: true, renderValid: false })) {
-          persistCurrentSettings();
-        }
-      });
-    });
-
-    const customTuningInput = root.querySelector('#custom-tuning');
-    if (customTuningInput) {
-      const applyCustomTuning = ({ renderValid = true } = {}) => {
-        const tuning = parseTuningInput(customTuningInput.value);
-        if (!tuning) {
-          render(controller.getState(), 'Use 6 or 7 tuning notes like E A D G B e.', setupDrafts.getFretRangeInputDraft());
-          return false;
-        }
-        const invalidFretDraft = setupDrafts.getFretRangeInputDraft();
-        const showFretError = !setupDrafts.syncSetupInputsAndRequireValidFretRange({ renderInvalidFretRange: true, renderValid });
-        controller.setTuning(tuning, { render: renderValid });
-        persistCurrentSettings();
-        if (showFretError) setupDrafts.renderFretRangeError(invalidFretDraft);
-        return true;
-      };
-      customTuningInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          applyCustomTuning();
-          customTuningInput.blur();
-        }
-      });
-      customTuningInput.addEventListener('blur', () => applyCustomTuning({ renderValid: false }));
+      return;
     }
-
+    const target = event.target;
+    if (event.key === 'Enter' && inputFields[target.id]) {
+      event.preventDefault();
+      if (!event.repeat) { drafts.edit(inputFields[target.id], target.value); commit(); target.blur(); }
+      return;
+    }
+    const space = event.key === ' ' || event.code === 'Space';
+    if (event.repeat && (space || event.key === 'Enter') && target.closest?.('.practice-actions, .done-actions, .deck-footer')) {
+      event.preventDefault(); return;
+    }
+    if (target.isContentEditable || target.closest?.('input, textarea, select, button, a')) return;
+    if (!space) return;
+    event.preventDefault();
+    if (event.repeat || state.startPending) return;
+    if (state.phase === 'idle' || state.phase === 'done') start();
+    else if (state.phase === 'paused') controller.resume();
+    else controller.pause();
   }
 
-  controller = createAppController({
-    render,
-    prepareAudio: clickPlayer.prepare,
-    playClick: clickPlayer.play,
-    setIntervalFn,
-    clearIntervalFn,
-    createOrder,
-    initialState: createIdleState(initialSettings),
+  controller = createAppController({ render, prepareAudio: player.prepare, playClick: player.play,
+    createOrder, initialState: createIdleState(initialSettings),
+    audioClock: player.now, cancelClick: player.cancel,
   });
-
-  setupDrafts = createSetupDrafts({ root, controller, render });
-
-  render(controller.getState());
-  documentElement?.classList?.toggle?.('touch-first', isTouchFirstEnvironment());
-  documentElement?.classList?.remove?.('keyboard-seen');
-  root.addEventListener('click', handleRootClick);
-  if (documentTarget) {
-    documentTarget.addEventListener('keydown', handleGlobalKeydown);
-    documentTarget.addEventListener('click', handleDocumentClick);
-  }
+  paint();
+  documentElement.classList.toggle('touch-first', Boolean(matchMediaFn?.('(hover: none) and (pointer: coarse)')?.matches || navigatorLike?.userAgentData?.mobile));
+  documentElement.classList.remove('keyboard-seen');
+  root.addEventListener('click', handleClick);
+  root.addEventListener('input', event => {
+    const field = inputFields[event.target.id];
+    if (!field) return;
+    drafts.edit(field, event.target.value);
+    // Changing a draft revokes a pending Start even before the field is committed.
+    if (controller.getState().startPending) controller.stop();
+    drafts.read(controller.getState());
+    paint();
+  });
+  root.addEventListener('focusout', event => {
+    if (painting || !inputFields[event.target.id]) return;
+    drafts.edit(inputFields[event.target.id], event.target.value);
+    commit();
+  });
+  root.addEventListener('wheel', event => {
+    if (event.target.id !== 'bpm' || event.deltaY === 0) return;
+    event.preventDefault();
+    editBpm((parseBpmInput(drafts.values.bpm) ?? controller.getState().bpm) + (event.deltaY < 0 ? 1 : -1));
+  }, { passive: false });
+  documentTarget.addEventListener('keydown', handleKey);
+  documentTarget.addEventListener('click', event => {
+    if (root.contains(event.target) && event.target.closest('button, .header-popover')) return;
+    if (openPopover) { openPopover = ''; paint(); }
+  });
+  documentTarget.addEventListener('visibilitychange', () => {
+    if (documentTarget.hidden) {
+      if (controller.getState().startPending) stop(); else controller.pause();
+    }
+  });
   return controller;
 }
 
 if (typeof document !== 'undefined') {
-  const AudioContextCtor = globalThis.AudioContext ?? globalThis.webkitAudioContext;
-  mountBrowserApp({ root: document.getElementById('app'), AudioContextCtor });
+  mountBrowserApp({ root: document.getElementById('app'), AudioContextCtor: globalThis.AudioContext ?? globalThis.webkitAudioContext });
 }
