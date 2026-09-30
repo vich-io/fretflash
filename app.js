@@ -47,6 +47,10 @@ export function mountBrowserApp({
   createOrder = shuffleSelectedLabels,
 } = {}) {
   if (!root) throw new Error('FretFlash root element not found');
+  // Keep the prerendered help copy, but let live disclosure state belong to its DOM nodes.
+  const quickReference = root.querySelector('#quick-reference').cloneNode(true);
+  quickReference.removeAttribute('open');
+  for (const detail of quickReference.querySelectorAll('details')) detail.removeAttribute('open');
   const initialSettings = loadSettings(storage);
   const drafts = createSetupDrafts(initialSettings);
   const player = createWebAudioClickPlayer(AudioContextCtor);
@@ -66,6 +70,7 @@ export function mountBrowserApp({
     }, actionError || drafts.errors.bpm || drafts.errors.tuning || '');
     const template = documentTarget.createElement('template');
     template.innerHTML = html;
+    template.content.querySelector('#quick-reference-slot')?.replaceWith(quickReference.cloneNode(true));
     if (state.startPending) {
       for (const button of template.content.querySelectorAll('#start-button, #same-order-button, #restart-button, #resume-button')) button.disabled = true;
     }
@@ -220,7 +225,6 @@ export function mountBrowserApp({
     createOrder, initialState: createIdleState(initialSettings),
     audioClock: player.now, cancelClick: player.cancel,
   });
-  paint();
   documentElement.classList.toggle('touch-first', Boolean(matchMediaFn?.('(hover: none) and (pointer: coarse)')?.matches || navigatorLike?.userAgentData?.mobile));
   documentElement.classList.remove('keyboard-seen');
   root.addEventListener('click', handleClick);
@@ -256,6 +260,8 @@ export function mountBrowserApp({
       if (controller.getState().startPending) stop(); else controller.pause();
     }
   });
+  // Restore setup and enable controls only after all event handlers are installed.
+  paint();
   return controller;
 }
 

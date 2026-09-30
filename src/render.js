@@ -146,7 +146,7 @@ function getLocationModeLabel(locationMode = DEFAULT_LOCATION_MODE) {
 }
 
 function renderBrand() {
-  return `<button id="brand-home-button" class="app-brand" type="button"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span><span class="visually-hidden"> — return to setup</span></button>`;
+  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
 }
 
 function renderDrillCell(id, label, value, openPopover, error = '') {
@@ -292,7 +292,7 @@ ${renderHeaderPopovers(setup, renderFretRange, fretRangeError, openPopover, setu
 <p class="visually-hidden">${escapeHtml(view.prompt)}</p>
 ${renderPromptDeck(selectedLabels, fretRange, bpm, locationMode, tuning, selectedStringIndexes, view, startDisabled)}
 ${feedback}
-<details class="quick-help"><summary>Quick reference</summary><p>Play the displayed note on the indicated string with each click, from the lowest string to the highest. The app keeps time; it does not check your playing or show answer frets.</p><p><strong>One per string:</strong> one location on each available string. <strong>All in range:</strong> find every matching location, lowest fret first. Written spellings are separate prompts.</p><p><strong>Repeat</strong> keeps the sequence; <strong>Shuffle</strong> makes a new order. Change BPM while paused or after finishing. Space controls playback when you are not focused on a control. Escape closes an editor or exits the drill.</p></details>
+<div id="quick-reference-slot"></div>
 ${renderShortcutBar(view.phase)}
 </div>
 </main>`;

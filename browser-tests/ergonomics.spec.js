@@ -119,7 +119,7 @@ test('tempo edits cancel pending Resume and Repeat without losing the round', as
 
 test('enlarged tempo and transport labels remain inside controls; help stays native', async ({ page }) => {
   await page.setViewportSize({width:320,height:568}); await open(page);
-  await page.locator('.quick-help summary').focus(); await page.keyboard.press('Space');
+  await page.locator('.quick-help > summary').focus(); await page.keyboard.press('Space');
   await expect(page.locator('.quick-help')).toHaveAttribute('open',''); await expect(page.locator('.prompt-deck')).toBeVisible();
   await page.evaluate(()=>document.documentElement.style.fontSize='200%');
   async function contained(){

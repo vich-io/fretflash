@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "test:browser": "playwright test",
-    "check:runtime": "node scripts/check-runtime.mjs",
+    "prerender": "node scripts/prerender.mjs",
+    "check:runtime": "node scripts/prerender.mjs --check && node scripts/check-runtime.mjs",
     "verify:public": "node scripts/verify-public.mjs"
   },
   "devDependencies": {

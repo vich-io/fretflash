@@ -25,6 +25,7 @@
 * { box-sizing: border-box; }
 html { min-height: 100%; background: var(--bg); }
 body { margin: 0; min-height: 100svh; background: var(--bg); color: var(--text); }
+.javascript-notice { width: min(100%, calc(var(--setup-width) + 3rem)); margin: 1.5rem auto 0; padding: 0 1.5rem; color: var(--muted); }
 button, input { font: inherit; }
 button {
   min-height: 2.75rem;
@@ -82,7 +83,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { appearance:
   margin: 0 auto;
 }
 .setup-app-bar { display: flex; justify-content: flex-start; }
+.brand-heading { margin: 0; font: inherit; }
 .app-brand {
+  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
@@ -92,6 +95,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { appearance:
   color: var(--text);
 }
 .brand-mark { display: block; width: 28px; height: 28px; flex: none; }
+.app-brand:disabled { opacity: 1; cursor: default; }
 .brand-wordmark {
   display: block;
   font-size: 1.35rem;
@@ -227,6 +231,8 @@ summary { cursor: pointer; min-height: 2.75rem; align-content: center; }
 .quick-help { color: var(--muted); font-size: 0.85rem; }
 .quick-help p { margin: 0.5rem 0 1rem; line-height: 1.6; }
 .quick-help strong { color: var(--text); font-weight: 500; }
+.quick-help details { border-top: 1px solid var(--line); }
+.quick-help em { font-style: normal; color: var(--text); }
 
 .app-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; min-height: 2.75rem; }
 .home-link { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0.25rem; color: var(--muted); font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 0.8rem; text-decoration: none; }

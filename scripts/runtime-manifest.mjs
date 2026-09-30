@@ -18,6 +18,8 @@ function references(file, source) {
   const refs = [];
   if (extname(file) === '.html') {
     for (const match of source.matchAll(/\b(?:src|href)\s*=\s*["']([^"']+)["']/g)) refs.push(match[1]);
+    // Sharing crawlers use absolute image URLs, but the image is a shipped local asset.
+    for (const match of source.matchAll(/<meta\b[^>]*(?:property|name)=["'](?:og:image|twitter:image)["'][^>]*content=["']https:\/\/fretflash\.vich\.io\/([^"']+)["']/g)) refs.push('/' + match[1]);
   } else if (extname(file) === '.css') {
     for (const match of source.matchAll(/\burl\(\s*["']?([^\s)'" ]+)["']?\s*\)|@import\s*["']([^"']+)["']/g)) refs.push(match[1] || match[2]);
   } else if (extname(file) === '.js') {

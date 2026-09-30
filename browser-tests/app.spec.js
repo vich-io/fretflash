@@ -85,13 +85,22 @@ test('held Space repeats cannot toggle transport again', async ({ page }) => {
   await page.keyboard.up('Space');
 });
 
-test('Pause keeps exactly the previously displayed cue, then Resume advances without replay', async ({ page }) => {
+test('Pause retains the cue and Resume advances once on a shared controlled clock', async ({ page }) => {
+  // This is a deterministic UI/lifecycle test. Native audio output is tested below.
+  // Advancing JS timers alone leaves AudioContext time running independently.
+  await page.route('**/app.js', async route => {
+    const response = await route.fetch();
+    const body = await response.text();
+    expect(body).toContain('audioClock: player.now');
+    await route.fulfill({ response, body: body.replace('audioClock: player.now', 'audioClock: () => performance.now() / 1000') });
+  });
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
   await setup(page);
   await page.locator('[data-popover-target="bpm"]').click();
   await page.locator('#bpm').fill('240');
   await page.keyboard.press('Tab');
   await page.keyboard.press('Escape');
-  await page.clock.install();
   await page.locator('#start-button').click();
   await expect(page.locator('.practice-countin')).toBeVisible();
   await page.clock.runFor(1250);
@@ -100,11 +109,15 @@ test('Pause keeps exactly the previously displayed cue, then Resume advances wit
   const note = await page.locator('.current-note').innerText();
   await page.locator('#pause-button').click();
   await expect(page.locator('.practice-paused')).toBeVisible();
+  await page.clock.runFor(1000);
   expect(await page.locator('.practice-cue-row').innerText()).toBe(cue);
   expect(await page.locator('.current-note').innerText()).toBe(note);
   await page.locator('#resume-button').click();
   await expect(page.locator('.practice-running')).toBeVisible();
-  await expect.poll(() => page.locator('.practice-cue-row').innerText()).not.toBe(cue);
+  await page.clock.runFor(249);
+  expect(await page.locator('.practice-cue-row').innerText()).toBe(cue);
+  await page.clock.runFor(1);
+  await expect(page.locator('.beat-meter')).toHaveText('3 / 6');
 });
 
 test('real Web Audio reaches destination side-tap, accents target, then Stop silences it', async ({ page }) => {
@@ -177,7 +190,7 @@ test('real Web Audio reaches destination side-tap, accents target, then Stop sil
 test('selected artwork, semantic fonts, ordered spellings, and no answer frets', async ({ page, request, baseURL }) => {
   const errors = await setup(page);
   const icon = new URL('assets/icons/fretflash-six-line-f.svg', baseURL);
-  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', icon.pathname.slice(1));
+  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute('href', icon.pathname.slice(1));
   await expect(page.locator('.brand-mark')).toHaveAttribute('src', icon.pathname.slice(1));
   const selected = await request.get(icon.href);
   expect(selected.ok()).toBeTruthy();

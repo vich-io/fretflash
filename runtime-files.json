@@ -14,6 +14,8 @@
     "src/view-model.js",
     "assets/fonts/inter-latin-variable.woff2",
     "assets/fonts/OFL.txt",
-    "assets/icons/fretflash-six-line-f.svg"
+    "assets/icons/fretflash-six-line-f.svg",
+    "assets/icons/fretflash-192.png",
+    "assets/share-card.png"
   ]
 }

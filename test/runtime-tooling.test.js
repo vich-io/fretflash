@@ -20,13 +20,14 @@ test('public verifier rejects changed modules and a wrong ordinary root independ
   let mutation = '';
   const server = createServer(async (request, response) => {
     if (request.url === mutation) { response.end('wrong bytes'); return; }
+    if (request.url === '/index.html') { response.writeHead(301, { Location: '/' }).end(); return; }
     const file = request.url === '/' ? 'index.html' : request.url.slice(1);
     try { response.end(await readFile(join(root, file))); } catch { response.writeHead(404).end(); }
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   try {
     const origin = `http://127.0.0.1:${server.address().port}/`;
-    for (const [path, expected] of [['', 0], ['/app.js', 1], ['/', 1]]) {
+    for (const [path, expected] of [['', 0], ['/app.js', 1], ['/', 1], ['/index.html', 1]]) {
       mutation = path;
       const result = await run('scripts/verify-public.mjs', { env: { ...process.env, PREVIEW_URL: origin } });
       assert.equal(result.code, expected, `${path || 'matching bytes'}: ${result.output}`);

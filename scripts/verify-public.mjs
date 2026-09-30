@@ -11,7 +11,7 @@ if (!['https:', 'http:'].includes(origin.protocol) || origin.pathname !== '/' ||
 const files = await checkRuntimeGraph();
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 let failed = 0;
-const targets = [...files.map(file => [file, file]), ['/', 'index.html']];
+const targets = files.map(file => [file === 'index.html' ? '/' : file, file]);
 for (const [path, file] of targets) {
   const url = new URL(path, origin);
   const expected = digest(await readFile(new URL(`../${file}`, import.meta.url)));
@@ -26,5 +26,13 @@ for (const [path, file] of targets) {
     console.error(`FAIL ${path}: ${error.message}`);
   }
 }
+console.log(`${targets.length - failed}/${targets.length} runtime responses match local bytes (document checked at /)`);
+try {
+  const response = await fetch(new URL('index.html', origin), { redirect: 'manual', signal: AbortSignal.timeout(10000) });
+  if (response.status !== 301 || response.headers.get('location') !== '/') throw new Error('Expected HTTP 301 with Location: /');
+  console.log('OK /index.html → / (301)');
+} catch (error) {
+  failed += 1;
+  console.error(`FAIL /index.html redirect: ${error.message}`);
+}
 if (failed) process.exitCode = 1;
-console.log(`${targets.length - failed}/${targets.length} public paths match local bytes (${files.length} runtime files plus ordinary root)`);
