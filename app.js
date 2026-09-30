@@ -129,7 +129,12 @@ export function mountBrowserApp({
     const trigger = openPopover;
     openPopover = '';
     paint();
-    root.querySelector(`[data-popover-target="${trigger}"]`)?.focus({ preventScroll: true });
+    const button = root.querySelector(`[data-popover-target="${trigger}"]`);
+    button?.focus({ preventScroll: true });
+    if (matchMediaFn?.('(max-width: 720px)').matches) {
+      if (controller.getState().phase === 'idle') button?.scrollIntoView({ block: 'nearest' });
+      else documentTarget.defaultView?.scrollTo(0, 0);
+    }
   }
 
   function continueRound(restart = false) {
@@ -143,10 +148,14 @@ export function mountBrowserApp({
     if (!button || !root.contains(button) || button.disabled) return;
     if (button.dataset.popoverTarget || button.dataset.recoverEditor) {
       const target = button.dataset.popoverTarget || button.dataset.recoverEditor;
-      openPopover = openPopover === target ? '' : target;
+      if (openPopover === target) { closeEditor(); return; }
+      openPopover = target;
       paint();
+      const panel = root.querySelector(`[data-popover="${openPopover}"]`);
+      if (matchMediaFn?.('(max-width: 720px)').matches && panel.getBoundingClientRect().bottom > documentTarget.defaultView.innerHeight) {
+        panel.scrollIntoView({ block: 'start' });
+      }
       if (openPopover && (event.detail === 0 || button.dataset.recoverEditor)) {
-        const panel = root.querySelector(`[data-popover="${openPopover}"]`);
         (panel.querySelector('input') || panel.querySelector('button:not([data-close-editor])'))?.focus();
       }
       return;

@@ -269,10 +269,9 @@ test('renderHtml renders tuning presets, custom tuning input, and selected strin
   assert.match(html, /data-tuning-id="standard-7" aria-pressed="true"/);
   assert.match(html, /<div class="tuning-custom-row"><label for="custom-tuning">Custom<\/label><input id="custom-tuning"[^>]*value="B E A D G B e"/);
   assert.doesNotMatch(html, /<div class="control-row compact-field"><label for="custom-tuning">Custom<\/label>/);
-  assert.match(html, /data-string-index="0" aria-label="String 7 B" aria-pressed="true">B<\/button>/);
-  assert.match(html, /data-string-index="1" aria-label="String 6 E" aria-pressed="false">E<\/button>/);
-  assert.match(html, /data-string-index="5" aria-label="String 2 B" aria-pressed="false">B<\/button>/);
-  assert.match(html, /data-string-index="6" aria-label="String 1 e" aria-pressed="true">e<\/button>/);
+  for (const [index, number, label, selected] of [[0, 7, 'B', true], [1, 6, 'E', false], [5, 2, 'B', false], [6, 1, 'e', true]]) {
+    assert.ok(html.includes(`data-string-index="${index}" aria-label="String ${number} ${label}" aria-pressed="${selected}"><span class="string-number" aria-hidden="true">${number}</span><span>${label}</span></button>`));
+  }
   assert.match(html, /At least one string is required\./);
   assert.match(html, /1 notes · 3 clicks · 3s/);
 });

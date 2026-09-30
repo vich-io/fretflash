@@ -115,7 +115,7 @@ function renderStringControls(tuning = DEFAULT_TUNING, selectedStringIndexes) {
   return createTuningStrings(activeTuning.strings).map((string, index) => {
     const isSelected = selected.has(index);
     const selectedClass = isSelected ? ' is-selected' : '';
-    return `<button class="string-chip${selectedClass}" type="button" data-string-index="${index}" aria-label="String ${escapeAttributeValue(string.number)} ${escapeAttributeValue(string.label)}" aria-pressed="${isSelected}">${escapeHtml(string.label)}</button>`;
+    return `<button class="string-chip${selectedClass}" type="button" data-string-index="${index}" aria-label="String ${escapeAttributeValue(string.number)} ${escapeAttributeValue(string.label)}" aria-pressed="${isSelected}"><span class="string-number" aria-hidden="true">${escapeHtml(string.number)}</span><span>${escapeHtml(string.label)}</span></button>`;
   }).join('');
 }
 
@@ -184,7 +184,7 @@ function renderHeaderPopovers(setup, renderFretRange, fretRangeError = '', openP
   return `<div class="header-popovers" aria-live="polite">
 ${popover('bpm', 'BPM', renderBpmControls(setup, drafts.bpm))}
 ${popover('fret-range', 'Fret range', renderFretRangeControls(renderFretRange, fretRangeError))}
-${popover('strings', 'Strings', `<div class="string-grid" aria-label="Selected strings">${renderStringControls(setup.tuning, setup.selectedStringIndexes)}</div><p class="microcopy">Toggle strings to include or exclude targets. At least one string is required.</p>`)}
+${popover('strings', 'Strings', `<div class="string-grid${setup.tuning.strings.length === 7 ? ' string-grid-seven' : ''}" aria-label="Selected strings">${renderStringControls(setup.tuning, setup.selectedStringIndexes)}</div><p class="microcopy">Toggle strings to include or exclude targets. At least one string is required.</p>`)}
 ${popover('tuning', 'Tuning', renderTuningControls(setup.tuning, drafts.tuning))}
 ${popover('targets', 'Targets', `<div class="choice-stack">${renderLocationModeControls(setup.locationMode)}</div>`)}
 </div>`;
@@ -198,7 +198,7 @@ function selectedLabelsMatchPreset(selectedLabels, presetLabels) {
   return presetLabels.every((label) => selected.has(label));
 }
 
-function renderPromptDeck(selectedLabels, fretRange = DEFAULT_FRET_RANGE, bpm = DEFAULT_BPM, locationMode = DEFAULT_LOCATION_MODE, tuning = DEFAULT_TUNING, selectedStringIndexes, view, startDisabled = false) {
+function renderPromptDeck(selectedLabels) {
   const selected = new Set(selectedLabels);
   const presetButtons = [['all', 'All'], ['naturals', 'Naturals'], ['sharps', 'Sharps'], ['flats', 'Flats']]
     .map(([key, label]) => {
@@ -215,10 +215,9 @@ function renderPromptDeck(selectedLabels, fretRange = DEFAULT_FRET_RANGE, bpm = 
   }).join('')}</div>`).join('');
 
   return `<section class="prompt-deck" aria-label="Note prompt deck">
-<div class="deck-heading"><h2>Notes to practice</h2><p class="note-pool-summary">${escapeHtml(getSetupSummary(selectedLabels, fretRange, bpm, locationMode, tuning, selectedStringIndexes))} · shuffled</p></div>
+<div class="deck-heading"><h2>Notes to practice</h2></div>
 <div class="deck-tools"><div class="preset-row" aria-label="Note pool presets">${presetButtons}</div>${clearButton}</div>
 <div class="note-grid">${noteButtons}</div>
-<footer class="deck-footer"><button id="start-button" class="primary-action" type="button"${startDisabled ? ' disabled aria-disabled="true"' : ''}>${escapeHtml(view?.primaryButton ?? 'Start')}</button></footer>
 </section>`;
 }
 
@@ -284,16 +283,18 @@ export function renderHtml(
   if (view.phase === 'idle') {
     return `<main class="app-shell app-shell-setup">
 <div class="setup-launcher">
+<div class="setup-scroll">
 <div class="setup-app-bar">
 ${renderBrand()}
 </div>
 ${renderDrillHeader(setup, renderFretRange, openPopover, setupInput.fieldErrors)}
 ${renderHeaderPopovers(setup, renderFretRange, fretRangeError, openPopover, setupInput.drafts)}
 <p class="visually-hidden">${escapeHtml(view.prompt)}</p>
-${renderPromptDeck(selectedLabels, fretRange, bpm, locationMode, tuning, selectedStringIndexes, view, startDisabled)}
-${feedback}
-<div id="quick-reference-slot"></div>
-${renderShortcutBar(view.phase)}
+${renderPromptDeck(selectedLabels)}
+</div>
+<div class="setup-transport">${feedback}<div class="setup-start-row"><p class="note-pool-summary">${escapeHtml(getSetupSummary(selectedLabels, fretRange, bpm, locationMode, tuning, selectedStringIndexes))} · shuffled</p><footer class="deck-footer"><button id="start-button" class="primary-action" type="button"${startDisabled ? ' disabled aria-disabled="true"' : ''}>${escapeHtml(view.primaryButton ?? 'Start')}</button></footer></div></div>
+<div class="setup-tail"><div id="quick-reference-slot"></div>
+${renderShortcutBar(view.phase)}</div>
 </div>
 </main>`;
   }
