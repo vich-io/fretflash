@@ -1,13 +1,15 @@
-import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js';
-import { BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js';
-import { createIdleState } from './src/state.js';
-import { shuffleSelectedLabels } from './src/round.js';
-import { getViewModel } from './src/view-model.js';
-import { renderHtml } from './src/render.js';
-import { createWebAudioClickPlayer } from './src/audio.js';
-import { createSetupDrafts } from './src/browser/setup-drafts.js';
-import { bindTempoGestures } from './src/browser/tempo-gestures.js';
-import { createAppController } from './src/controller.js';
+import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js?v=043bbc19dc51c1fe';
+import { FRET_MIN, FRET_MAX, isValidFretRange, parseFretBoundInput,
+ BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js?v=043bbc19dc51c1fe';
+import { createIdleState } from './src/state.js?v=043bbc19dc51c1fe';
+import { shuffleSelectedLabels } from './src/round.js?v=043bbc19dc51c1fe';
+import { getViewModel } from './src/view-model.js?v=043bbc19dc51c1fe';
+import { renderHtml } from './src/render.js?v=043bbc19dc51c1fe';
+import { createWebAudioClickPlayer } from './src/audio.js?v=043bbc19dc51c1fe';
+import { createSetupDrafts } from './src/browser/setup-drafts.js?v=043bbc19dc51c1fe';
+import { bindNumericGestures } from './src/browser/numeric-gestures.js?v=043bbc19dc51c1fe';
+import { createAppController } from './src/controller.js?v=043bbc19dc51c1fe';
+import { setupPwa } from './src/browser/pwa.js?v=043bbc19dc51c1fe';
 
 function browserStorage() {
   try { return globalThis.localStorage; } catch { return undefined; }
@@ -46,6 +48,7 @@ export function mountBrowserApp({
   documentTarget = globalThis.document, documentElement = documentTarget?.documentElement,
   matchMediaFn = globalThis.matchMedia?.bind(globalThis), navigatorLike = globalThis.navigator,
   createOrder = shuffleSelectedLabels,
+  onPaint = () => {},
 } = {}) {
   if (!root) throw new Error('FretFlash root element not found');
   // Keep the prerendered help copy, but let live disclosure state belong to its DOM nodes.
@@ -60,7 +63,7 @@ export function mountBrowserApp({
   let actionError = '';
   let painting = false;
   let previousPhase = 'idle';
-  let tempoGestures;
+  let numericGestures;
   const inputFields = { bpm: 'bpm', 'fret-from': 'from', 'fret-to': 'to', 'custom-tuning': 'tuning' };
 
   function paint(state = controller.getState()) {
@@ -77,7 +80,7 @@ export function mountBrowserApp({
       for (const button of template.content.querySelectorAll('#start-button, #same-order-button, #restart-button, #resume-button')) button.disabled = true;
     }
     updateChildren(root, template.content);
-    tempoGestures?.reconcile();
+    numericGestures?.reconcile();
     if (previousPhase === 'idle' && state.phase !== 'idle') documentTarget.defaultView?.scrollTo(0, 0);
     previousPhase = state.phase;
     const rail = root.querySelector('.note-progress-rail');
@@ -87,6 +90,7 @@ export function mountBrowserApp({
       if (cell.left < box.left || cell.right > box.right) rail.scrollLeft += cell.left - box.left - (box.width - cell.width) / 2;
     }
     painting = false;
+    onPaint(state);
   }
 
   function render(state, error = '') { actionError = error; paint(state); }
@@ -132,6 +136,15 @@ export function mountBrowserApp({
 
   function stepBpm(delta) {
     editBpm((parseBpmInput(drafts.values.bpm) ?? controller.getState().bpm) + delta);
+  }
+
+  function stepFret(bound, delta) {
+    const parsed = { from: parseFretBoundInput(drafts.values.from), to: parseFretBoundInput(drafts.values.to) };
+    const range = isValidFretRange(parsed) ? parsed : controller.getState().fretRange;
+    const lower = bound === 'from' ? FRET_MIN : range.from;
+    const upper = bound === 'from' ? range.to : FRET_MAX;
+    const fretRange = { ...range, [bound]: Math.max(lower, Math.min(upper, range[bound] + delta)) };
+    commit(setup => ({ ...setup, fretRange }), ['fretRange']);
   }
 
   function closeEditor() {
@@ -182,6 +195,7 @@ export function mountBrowserApp({
     const data = button.dataset;
     if (data.bpm) { editBpm(Number(data.bpm)); return; }
     if (data.bpmStep) { stepBpm(Number(data.bpmStep)); return; }
+    if (data.fretStep) { stepFret(data.fretBound, Number(data.fretStep)); return; }
     if (data.fretPreset) {
       commit(setup => ({ ...setup, fretRange: { from: Number(data.fretFrom), to: Number(data.fretTo) } }), ['fretRange']); return;
     }
@@ -248,7 +262,10 @@ export function mountBrowserApp({
   documentElement.classList.toggle('touch-first', Boolean(matchMediaFn?.('(hover: none) and (pointer: coarse)')?.matches || navigatorLike?.userAgentData?.mobile));
   documentElement.classList.remove('keyboard-seen');
   root.addEventListener('click', handleClick);
-  tempoGestures = bindTempoGestures(root, stepBpm);
+  numericGestures = bindNumericGestures(root, (element, delta) => {
+    if (element.dataset.fretBound) stepFret(element.dataset.fretBound, delta);
+    else stepBpm(delta);
+  });
   root.addEventListener('input', event => {
     const field = inputFields[event.target.id];
     if (!field) return;
@@ -289,5 +306,13 @@ export function mountBrowserApp({
 }
 
 if (typeof document !== 'undefined') {
-  mountBrowserApp({ root: document.getElementById('app'), AudioContextCtor: globalThis.AudioContext ?? globalThis.webkitAudioContext });
+  let pwa;
+  const controller = mountBrowserApp({ root: document.getElementById('app'),
+    AudioContextCtor: globalThis.AudioContext ?? globalThis.webkitAudioContext,
+    onPaint: () => pwa?.refresh(),
+  });
+  pwa = setupPwa(document.querySelector('.pwa-notice'), () => {
+    const state = controller.getState();
+    return Boolean(state.startPending || ['countin', 'running', 'paused'].includes(state.phase));
+  });
 }

@@ -3,7 +3,7 @@ import {
   NOTE_PRESETS,
   TUNING_PRESETS,
   createTuningStrings,
-} from './music.js';
+} from './music.js?v=043bbc19dc51c1fe';
 
 import {
   BPM_MAX,
@@ -19,20 +19,21 @@ import {
   isValidFretRange,
   normalizeFretRange,
   normalizeSelectedStringIndexes,
-} from './settings.js';
+  parseFretBoundInput,
+} from './settings.js?v=043bbc19dc51c1fe';
 
 import {
   createRangeFilteredRound,
   formatRoundDuration,
   getFretRangeLabel,
   getRoundClickCount,
-} from './round.js';
+} from './round.js?v=043bbc19dc51c1fe';
 
 const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 export const PROMPT_DECK_LABELS = NOTE_LETTERS.flatMap(letter => [letter, `${letter}b`, `${letter}#`]);
 
-import { FRET_RANGE_ERROR } from './browser/setup-drafts.js';
-import { getSpokenBpmMax } from './speech.js';
+import { FRET_RANGE_ERROR } from './browser/setup-drafts.js?v=043bbc19dc51c1fe';
+import { getSpokenBpmMax } from './speech.js?v=043bbc19dc51c1fe';
 export { FRET_RANGE_ERROR };
 
 // HTML rendering
@@ -65,21 +66,24 @@ function getFretRailStyle(range) {
   return `--fret-from: ${fromPercent}%; --fret-width: ${widthPercent}%;`;
 }
 
-function renderFretRangeControls(fretRange = DEFAULT_FRET_RANGE, fretRangeError = '') {
+function renderFretRangeControls(fretRange = DEFAULT_FRET_RANGE, fretRangeError = '', committedRange = DEFAULT_FRET_RANGE) {
   const range = isValidFretRange(fretRange) ? cloneFretRange(fretRange) : {
     from: fretRange?.from ?? DEFAULT_FRET_RANGE.from,
     to: fretRange?.to ?? DEFAULT_FRET_RANGE.to,
   };
   const fromValue = escapeAttributeValue(range.from);
   const toValue = escapeAttributeValue(range.to);
+  const parsed = { from: parseFretBoundInput(String(range.from)), to: parseFretBoundInput(String(range.to)) };
+  const displayRange = isValidFretRange(parsed) ? parsed : committedRange;
   const presetButtons = FRET_RANGE_PRESETS
     .map((preset) => {
-      const isSelected = range.from === preset.from && range.to === preset.to;
+      const isSelected = isValidFretRange(parsed) && parsed.from === preset.from && parsed.to === preset.to;
       const selectedClass = isSelected ? ' is-selected' : '';
       return `<button class="fret-preset-button${selectedClass}" type="button" data-fret-preset="${escapeAttributeValue(preset.id)}" data-fret-from="${preset.from}" data-fret-to="${preset.to}" aria-pressed="${isSelected}"><strong>${escapeHtml(preset.label)}</strong><span>${preset.from}–${preset.to}</span></button>`;
     })
     .join('');
-  return `<div class="fret-range-picker" aria-label="Fret range picker"><div class="fret-range-quick-label">Common ranges</div><div class="fret-range-presets" aria-label="Common fret ranges">${presetButtons}</div><div class="fret-span-rail" aria-label="Selected fret span ${fromValue} to ${toValue}"><span>0</span><div class="fret-span-track" style="${getFretRailStyle(range)}"><div class="fret-span-fill"></div></div><span>24</span></div><div class="fret-range-custom-label">Custom range</div><div class="fret-range-inputs" aria-label="Fret range inputs"><label for="fret-from">From</label><input id="fret-from" type="number" inputmode="numeric" enterkeyhint="done" min="${FRET_MIN}" max="${FRET_MAX}" step="1" value="${fromValue}"><label for="fret-to">To</label><input id="fret-to" type="number" inputmode="numeric" enterkeyhint="done" min="${FRET_MIN}" max="${FRET_MAX}" step="1" value="${toValue}"></div></div>${fretRangeError ? `<p class="field-error" role="alert">${escapeAttributeValue(fretRangeError)}</p>` : ''}`;
+  const boundField = (bound, label, value) => `<div class="fret-bound-field"><label for="fret-${bound}">${label}</label><div class="bpm-field" aria-label="${label} fret"><button class="bpm-stepper-button" type="button" data-fret-bound="${bound}" data-fret-step="-1" aria-label="Decrease ${label.toLowerCase()} fret">−</button><input id="fret-${bound}" data-fret-bound="${bound}" type="number" inputmode="numeric" enterkeyhint="done" min="${FRET_MIN}" max="${FRET_MAX}" step="1" value="${value}"><button class="bpm-stepper-button" type="button" data-fret-bound="${bound}" data-fret-step="1" aria-label="Increase ${label.toLowerCase()} fret">+</button></div></div>`;
+  return `<div class="fret-range-picker" aria-label="Fret range picker"><div class="fret-range-quick-label">Common ranges</div><div class="fret-range-presets" aria-label="Common fret ranges">${presetButtons}</div><div class="fret-span-rail" aria-label="Selected fret span ${displayRange.from} to ${displayRange.to}"><span>0</span><div class="fret-span-track" style="${getFretRailStyle(displayRange)}"><div class="fret-span-fill"></div></div><span>24</span></div><div class="fret-range-custom-label">Custom range</div><div class="fret-range-inputs" aria-label="Fret range inputs">${boundField('from', 'From', fromValue)}${boundField('to', 'To', toValue)}</div></div>${fretRangeError ? `<p class="field-error" role="alert">${escapeAttributeValue(fretRangeError)}</p>` : ''}`;
 }
 
 function renderLocationModeControls(locationMode = DEFAULT_LOCATION_MODE) {
@@ -151,7 +155,7 @@ function getLocationModeLabel(locationMode = DEFAULT_LOCATION_MODE) {
 }
 
 function renderBrand() {
-  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
+  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=043bbc19dc51c1fe" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
 }
 
 function renderDrillCell(id, label, value, openPopover, error = '') {
@@ -169,7 +173,7 @@ ${renderDrillCell('targets', 'Targets', getLocationModeLabel(setup.locationMode)
 </section>`;
 }
 
-const BPM_QUICK_PICKS = [30, 40, 50, 60, 70, 80, 100];
+const BPM_QUICK_PICKS = [30, 40, 60, 80, 120, 160];
 
 function renderBpmControls(setup, draft) {
   const maximum = setup.bpmMax ?? getSpokenBpmMax(setup);
@@ -189,7 +193,7 @@ function renderHeaderPopovers(setup, renderFretRange, fretRangeError = '', openP
   const popover = (id, title, body) => renderEditor(id, title, body, openPopover);
   return `<div class="header-popovers" aria-live="polite">
 ${popover('bpm', 'BPM', renderBpmControls(setup, drafts.bpm))}
-${popover('fret-range', 'Fret range', renderFretRangeControls(renderFretRange, fretRangeError))}
+${popover('fret-range', 'Fret range', renderFretRangeControls(renderFretRange, fretRangeError, setup.fretRange))}
 ${popover('strings', 'Strings', `<div class="string-grid${setup.tuning.strings.length === 7 ? ' string-grid-seven' : ''}" aria-label="Selected strings">${renderStringControls(setup.tuning, setup.selectedStringIndexes)}</div><p class="microcopy">Toggle strings to include or exclude targets. At least one string is required.</p>`)}
 ${popover('tuning', 'Tuning', renderTuningControls(setup.tuning, drafts.tuning))}
 ${popover('targets', 'Targets', `<div class="choice-stack">${renderLocationModeControls(setup.locationMode)}</div>`)}

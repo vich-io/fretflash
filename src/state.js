@@ -1,4 +1,4 @@
-import { createTuningStrings } from './music.js';
+import { createTuningStrings } from './music.js?v=043bbc19dc51c1fe';
 
 import {
   BPM_MAX,
@@ -7,12 +7,12 @@ import {
   cloneTuning,
   createSetup,
   isValidBpm,
-} from './settings.js';
+} from './settings.js?v=043bbc19dc51c1fe';
 
 import {
   createRangeFilteredRound,
   shuffleSelectedLabels,
-} from './round.js';
+} from './round.js?v=043bbc19dc51c1fe';
 
 export function createIdleState(
   setupInput = {},

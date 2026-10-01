@@ -1,7 +1,8 @@
-// Pointer state is transient; all value changes use the existing BPM command.
+// Pointer state is transient; value changes use the existing setup commands.
 // Ordinary clicks retain quick taps and keyboard/assistive activation.
-export function bindTempoGestures(root, stepBpm) {
+export function bindNumericGestures(root, stepControl) {
   const doc = root.ownerDocument, win = doc.defaultView;
+  const selector = '#bpm, #fret-from, #fret-to, [data-bpm-step], [data-fret-step]';
   let active = null, timer, suppressedClick = null;
 
   function finish(cancelled = true) {
@@ -17,34 +18,33 @@ export function bindTempoGestures(root, stepBpm) {
 
   function reconcile() {
     if (active && (!root.contains(active.element) || active.element.disabled ||
-        !active.element.closest('[data-popover="bpm"][data-open="true"]'))) finish();
+        !active.element.closest('[data-popover][data-open="true"]'))) finish();
   }
 
   function repeat() {
     reconcile();
     if (!active || active.kind !== 'hold') return;
     active.repeated = true;
-    stepBpm(active.delta);
+    stepControl(active.element, active.delta);
     if (!active) return;
     const held = win.performance.now() - active.started;
     timer = win.setTimeout(repeat, held >= 3000 ? 25 : held >= 1500 ? 50 : 120);
   }
 
   doc.addEventListener('pointerdown', event => {
-    if (active) finish(); // An additional pointer ends the current gesture too.
+    if (active) finish();
     if (!event.isPrimary || event.button !== 0) return;
     suppressedClick = null;
-    const element = event.target.closest?.('#bpm, [data-bpm-step]');
+    const element = event.target.closest?.(selector);
     if (!element || !root.contains(element) || element.disabled ||
-        !element.closest('[data-popover="bpm"][data-open="true"]')) return;
-    const isInput = element.id === 'bpm';
-    // Preserve mouse text selection and already-focused touch input editing.
+        !element.closest('[data-popover][data-open="true"]')) return;
+    const isInput = element.tagName === 'INPUT';
     if (isInput && (event.pointerType === 'mouse' || doc.activeElement === element)) return;
     if (isInput) event.preventDefault();
     active = {
       element, id: event.pointerId, kind: isInput ? 'drag' : 'hold',
       startX: event.clientX, startY: event.clientY, lastY: event.clientY,
-      dragging: false, repeated: false, delta: Number(element.dataset.bpmStep),
+      dragging: false, repeated: false, delta: Number(element.dataset.bpmStep ?? element.dataset.fretStep),
       started: win.performance.now(),
     };
     element.setPointerCapture(event.pointerId);
@@ -70,9 +70,8 @@ export function bindTempoGestures(root, stepBpm) {
     event.preventDefault();
     const steps = Math.trunc((active.lastY - event.clientY) / 4);
     if (steps) {
-      // Consume movement at the limits so direction reversal has no dead zone.
       active.lastY -= steps * 4;
-      stepBpm(steps);
+      stepControl(active.element, steps);
     }
   }, { passive: false });
 
@@ -84,15 +83,15 @@ export function bindTempoGestures(root, stepBpm) {
   doc.addEventListener('visibilitychange', () => { if (doc.hidden) finish(); });
 
   root.addEventListener('click', event => {
-    const element = event.target.closest?.('#bpm, [data-bpm-step]');
+    const element = event.target.closest?.(selector);
     if (!suppressedClick || event.detail === 0 || element !== suppressedClick) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     suppressedClick = null;
   }, true);
   root.addEventListener('contextmenu', event => {
-    if (event.target.closest?.('[data-bpm-step]') ||
-        (event.target.id === 'bpm' && doc.activeElement !== event.target)) event.preventDefault();
+    const element = event.target.closest?.(selector);
+    if (element && (element.tagName !== 'INPUT' || doc.activeElement !== element)) event.preventDefault();
   });
   return { reconcile };
 }

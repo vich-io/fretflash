@@ -3,7 +3,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url('assets/fonts/inter-latin-variable.woff2') format('woff2');
+  src: url('assets/fonts/inter-latin-variable.woff2?v=043bbc19dc51c1fe') format('woff2');
 }
 
 :root {
@@ -26,6 +26,9 @@
 html { min-height: 100%; background: var(--bg); }
 body { margin: 0; min-height: 100svh; background: var(--bg); color: var(--text); }
 .javascript-notice { width: min(100%, calc(var(--setup-width) + 3rem)); margin: 1.5rem auto 0; padding: 0 1.5rem; color: var(--muted); }
+.pwa-notice { width: min(100%, calc(var(--setup-width) + 3rem)); margin: 0 auto; padding: 0 1.5rem 1rem; display: flex; align-items: center; gap: 0.75rem; color: var(--muted); font-size: 0.8rem; -webkit-tap-highlight-color: transparent; }
+.pwa-notice[hidden] { display: none; }
+.pwa-notice button { padding: 0.25rem 0.75rem; }
 button, input { font: inherit; }
 button {
   min-height: 2.75rem;
@@ -160,7 +163,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { appearance:
 .bpm-field { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem; gap: 0.5rem; }
 #bpm { width: 100%; font-size: 1.75rem; line-height: 1; font-weight: 500; text-align: center; }
 .bpm-stepper-button { min-height: 2.75rem; padding: 0; border-radius: 0.3rem; }
-.bpm-stepper-button, #bpm:not(:focus) { touch-action: none; user-select: none; -webkit-touch-callout: none; }
+.bpm-stepper-button, #bpm:not(:focus), #fret-from:not(:focus), #fret-to:not(:focus) { touch-action: none; user-select: none; -webkit-touch-callout: none; }
 .fret-range-quick-label, .fret-range-custom-label {
   color: var(--muted); font-size: 0.8rem; font-weight: 400;
 }
@@ -176,9 +179,11 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { appearance:
 .fret-span-track { position: relative; height: 3px; background: var(--line); overflow: hidden; }
 .fret-span-fill { position: absolute; height: 100%; left: var(--fret-from); width: var(--fret-width); background: var(--accent); }
 .fret-range-custom-label { margin-top: 0.5rem; }
-.fret-range-inputs { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.fret-range-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.fret-bound-field { display: grid; gap: 0.35rem; min-width: 0; }
+@media (max-width: 520px) { .fret-range-inputs { grid-template-columns: 1fr; } }
 .fret-range-inputs label, .tuning-custom-row label { color: var(--muted); font-size: 0.8rem; }
-#fret-from, #fret-to { width: 4rem; text-align: center; }
+#fret-from, #fret-to { width: 100%; text-align: center; font-size: 1.75rem; }
 .string-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .string-chip { display: grid; align-content: center; gap: 0.1rem; min-width: 2.75rem; padding: 0.3rem 0.4rem; line-height: 1.2; }
 .string-number { font-size: 0.65rem; color: var(--muted); }

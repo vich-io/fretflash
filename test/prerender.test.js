@@ -5,12 +5,13 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { renderDocument } from '../scripts/prerender.mjs';
+import { unversion } from '../scripts/offline-release.mjs';
 
 const templatePath = 'scripts/page-template.html';
 
 test('checked-in initial HTML is generated from the current renderer and document template', async () => {
   const source = await readFile(templatePath, 'utf8');
-  assert.equal(await readFile('index.html', 'utf8'), renderDocument(source));
+  assert.equal(unversion(await readFile('index.html', 'utf8')), unversion(renderDocument(source)));
 });
 
 test('prerender refuses ambiguous template boundaries', () => {
@@ -23,7 +24,7 @@ test('normal runtime gate rejects stale HTML without rewriting it; prerender rep
   const fixture = await mkdtemp(join(tmpdir(), 'fretflash-prerender-'));
   try {
     const runtime = JSON.parse(await readFile('runtime-files.json', 'utf8')).files;
-    const files = [...runtime, 'runtime-files.json', 'package.json', templatePath, 'scripts/prerender.mjs', 'scripts/check-runtime.mjs', 'scripts/runtime-manifest.mjs'];
+    const files = [...runtime, 'runtime-files.json', 'package.json', templatePath, 'scripts/prerender.mjs', 'scripts/check-runtime.mjs', 'scripts/runtime-manifest.mjs', 'scripts/offline-release.mjs'];
     for (const file of files) {
       await mkdir(dirname(join(fixture, file)), { recursive: true });
       await copyFile(file, join(fixture, file));

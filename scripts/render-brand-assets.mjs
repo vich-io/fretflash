@@ -15,4 +15,12 @@ try {
   await page.locator('img').evaluate(image => image.decode());
   await page.screenshot({ path: new URL('../assets/icons/fretflash-192.png', import.meta.url).pathname });
   console.log('Exported share-card.png (1200×630) and fretflash-192.png (192×192).');
+  for (const [name, size, art] of [['fretflash-512.png', 512, 512], ['fretflash-maskable-512.png', 512, 400], ['fretflash-apple-180.png', 180, 180]]) {
+    await page.setViewportSize({ width: size, height: size });
+    await page.setContent(`<body style="margin:0;background:#191919;height:100vh;display:grid;place-items:center"><img style="width:${art}px;height:${art}px" alt=""></body>`);
+    await page.locator('img').evaluate((image, source) => { image.src = source; }, new URL('../assets/icons/fretflash-six-line-f.svg', import.meta.url).href);
+    await page.locator('img').evaluate(image => image.decode());
+    await page.screenshot({ path: new URL(`../assets/icons/${name}`, import.meta.url).pathname });
+    console.log(`Exported ${name} (${size}×${size}).`);
+  }
 } finally { await browser.close(); }

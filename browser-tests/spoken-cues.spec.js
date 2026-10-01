@@ -132,13 +132,13 @@ test('one-target 200 BPM works through Start, remaining Resume, Restart and exac
 });
 
 test('failed voice download is visible and disabling speech restores normal Start', async ({ page }) => {
-  await page.route('**/assets/voice/george.wav', route => route.abort()); await page.goto(target); await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click();
+  await page.route('**/assets/voice/george.wav*', route => route.abort()); await page.goto(target); await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click();
   await expect(page.locator('[role="alert"]')).toContainText('Audio could not start'); await expect(page.locator('.prompt-deck')).toBeVisible();
   await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click(); await expect(page.locator('.practice-countin')).toBeVisible();
 });
 
 test('Cancel during voice loading revokes the pending Start after the response arrives', async ({ page }) => {
-  let release; const gate = new Promise(resolve => { release = resolve; }); await page.route('**/assets/voice/george.wav', async route => { await gate; await route.continue(); });
+  let release; const gate = new Promise(resolve => { release = resolve; }); await page.route('**/assets/voice/george.wav*', async route => { await gate; await route.continue(); });
   await probe(page); await page.goto(target); await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click(); await expect(page.locator('#cancel-start-button')).toBeVisible();
   await page.locator('#cancel-start-button').click(); release(); await page.waitForTimeout(500); await expect(page.locator('.prompt-deck')).toBeVisible();
   expect(await page.evaluate(() => window.__speechProof.words.length)).toBe(0); expect(await page.evaluate(() => window.__speechProof.clicks.length)).toBe(0);
@@ -190,7 +190,7 @@ test('200 BPM uses the bounded fallback only for the crowded call, with natural 
 
 for(const [variant,strings] of [['fast',2],['tight',1]]) {
   test(`a failed ${variant} bank supports speech-off recovery and a successful speech-on retry`,async ({ page }) => {
-    const route=`**/assets/voice/george-${variant}.wav`;
+    const route=`**/assets/voice/george-${variant}.wav*`;
     await page.route(route,r=>r.abort()); await page.goto(target); await shortDrill(page,200,['C#','Db'],strings);
     await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click();
     await expect(page.locator('[role="alert"]')).toContainText('Audio could not start'); await expect(page.locator('.prompt-deck')).toBeVisible();
@@ -207,7 +207,7 @@ test('10 BPM starts through ordinary controls and one-target spoken setup retain
   await expect(page.locator('#bpm')).toHaveAttribute('min', '10');
   await expect(page.locator('#bpm')).toHaveAttribute('max', '200');
   await expect(page.locator('[data-popover="bpm"] .microcopy')).toHaveCount(0);
-  await expect(page.locator('[data-bpm="100"]')).toBeEnabled();
+  await expect(page.locator('[data-bpm="160"]')).toBeEnabled();
   await page.keyboard.press('Escape'); await page.locator('#start-button').click();
   await expect(page.locator('.practice-countin')).toBeVisible();
   await expect(page.locator('.practice-context')).toContainText('10'); await page.locator('#stop-button').click();
@@ -253,7 +253,7 @@ test('all 21 spellings play at one-target 200 BPM with real output, complete cal
 
 test('Cancel while tight speech loads prevents late words and supports a fresh retry',async ({ page }) => {
   let release; const gate=new Promise(resolve=>{release=resolve;});
-  await page.route('**/assets/voice/george-tight.wav',async route=>{await gate;await route.continue();});
+  await page.route('**/assets/voice/george-tight.wav*',async route=>{await gate;await route.continue();});
   await probe(page); await page.goto(target); await shortDrill(page,200); await page.locator('#spoken-cues-button').click();
   await page.locator('#start-button').click(); await expect(page.locator('#cancel-start-button')).toBeVisible();
   await page.locator('#cancel-start-button').click(); release(); await page.waitForTimeout(300);

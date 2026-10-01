@@ -4,13 +4,14 @@ import { createSetup, saveSettings } from '../src/settings.js';
 const geometrySelectors = ['.brand-heading', '.drill-header', '.prompt-deck', '#quick-reference', '.app-footer'];
 const geometry = page => page.evaluate(selectors => Object.fromEntries(selectors.map(selector => {
   const { x, y, width, height } = document.querySelector(selector).getBoundingClientRect();
-  return [selector, { x, y, width, height }];
+  // Opening help scrolls short screens; compare document layout, not scroll offset.
+  return [selector, { x: x + scrollX, y: y + scrollY, width, height }];
 })), geometrySelectors);
 
 async function holdEntry(page) {
   let release;
   const gate = new Promise(resolve => { release = resolve; });
-  await page.route('**/app.js', async route => { await gate; await route.continue(); });
+  await page.route('**/app.js*', async route => { await gate; await route.continue(); });
   return release;
 }
 
@@ -56,6 +57,7 @@ for (const [width, height] of [[320,568], [390,844], [768,1024], [1440,900]]) {
       await expect(page.locator('.drill-header')).toHaveCSS('display', 'grid');
       await page.evaluate(() => document.fonts.ready);
       const before = await geometry(page);
+
       await page.screenshot({ path: info.outputPath('before-entry.png'), fullPage: true });
       await page.evaluate(() => {
         window.initialNodes = ['main', '#start-button', '#quick-reference'].map(selector => document.querySelector(selector));
@@ -78,11 +80,13 @@ for (const [width, height] of [[320,568], [390,844], [768,1024], [1440,900]]) {
       await expect(help).not.toHaveAttribute('open', '');
       await expect(help.locator('details')).not.toHaveAttribute('open', '');
       const after = await geometry(page);
+
       for (const selector of geometrySelectors) {
         for (const key of ['x', 'y', 'width', 'height']) expect(Math.abs(after[selector][key] - before[selector][key]), `${selector} ${key}`).toBeLessThanOrEqual(1);
       }
       await page.evaluate(() => document.activeElement.blur());
       await page.mouse.move(0, 0);
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
       await page.screenshot({ path: info.outputPath('ready.png'), fullPage: true });
       await page.locator('#start-button').click();
       await expect(page.locator('.practice-countin')).toBeVisible();
@@ -137,7 +141,7 @@ test('saved settings are restored before controls accept input', async ({ page }
 });
 
 test('failed entry request leaves the complete inactive setup and working help', async ({ page }) => {
-  await page.route('**/app.js', route => route.abort('failed'));
+  await page.route('**/app.js*', route => route.abort('failed'));
   await page.goto('/');
   await expectInitialSetup(page);
   await page.locator('#quick-reference > summary').click();

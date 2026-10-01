@@ -3,6 +3,8 @@ import { pathToFileURL } from 'node:url';
 import { createIdleState } from '../src/state.js';
 import { getViewModel } from '../src/view-model.js';
 import { renderHtml } from '../src/render.js';
+import { runtimeFiles } from './runtime-manifest.mjs';
+import { prepareOffline } from './offline-release.mjs';
 
 const root = new URL('../', import.meta.url);
 const start = '<!-- setup:start -->';
@@ -24,14 +26,17 @@ export function renderDocument(template) {
 }
 
 export async function prerender({ check = false } = {}) {
-  const output = renderDocument(await readFile(new URL('scripts/page-template.html', root), 'utf8'));
-  const destination = new URL('index.html', root);
-  if (check) {
-    if (await readFile(destination, 'utf8') !== output) {
-      throw new Error('index.html is stale. Run npm run prerender and include the generated HTML.');
+  const files = new Map(await Promise.all((await runtimeFiles()).map(async name => [name, await readFile(new URL(name, root))])));
+  files.set('index.html', Buffer.from(renderDocument(await readFile(new URL('scripts/page-template.html', root), 'utf8'))));
+  const prepared = prepareOffline(files);
+  for (const [name, output] of prepared.files) {
+    const destination = new URL(name, root);
+    const current = await readFile(destination);
+    if (check) {
+      if (!current.equals(output)) throw new Error(`${name} is stale. Run npm run prerender and include the generated offline release.`);
+    } else if (!current.equals(output)) {
+      await writeFile(destination, output);
     }
-  } else {
-    await writeFile(destination, output);
   }
 }
 

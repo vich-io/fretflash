@@ -88,7 +88,7 @@ test('held Space repeats cannot toggle transport again', async ({ page }) => {
 test('Pause retains the cue and Resume advances once on a shared controlled clock', async ({ page }) => {
   // This is a deterministic UI/lifecycle test. Native audio output is tested below.
   // Advancing JS timers alone leaves AudioContext time running independently.
-  await page.route('**/app.js', async route => {
+  await page.route('**/app.js*', async route => {
     const response = await route.fetch();
     const body = await response.text();
     expect(body).toContain('audioClock: player.now');
@@ -122,7 +122,7 @@ test('Pause retains the cue and Resume advances once on a shared controlled cloc
 
 test('real Web Audio reaches destination side-tap, accents target, then Stop silences it', async ({ page }) => {
   if (process.env.FRETFLASH_AUDIO_NEGATIVE_CONTROL === '1') {
-    await page.route('**/app.js', async route => {
+    await page.route('**/app.js*', async route => {
       const response = await route.fetch();
       const body = await response.text();
       if (!body.includes('playClick: player.play')) throw new Error('Negative-control seam changed; do not claim mutation proof');
@@ -190,8 +190,8 @@ test('real Web Audio reaches destination side-tap, accents target, then Stop sil
 test('selected artwork, semantic fonts, ordered spellings, and no answer frets', async ({ page, request, baseURL }) => {
   const errors = await setup(page);
   const icon = new URL('assets/icons/fretflash-six-line-f.svg', baseURL);
-  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute('href', icon.pathname.slice(1));
-  await expect(page.locator('.brand-mark')).toHaveAttribute('src', icon.pathname.slice(1));
+  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute('href', /^assets\/icons\/fretflash-six-line-f\.svg\?v=[a-f0-9]{16}$/);
+  await expect(page.locator('.brand-mark')).toHaveAttribute('src', await page.locator('link[rel="icon"][type="image/svg+xml"]').getAttribute('href'));
   const selected = await request.get(icon.href);
   expect(selected.ok()).toBeTruthy();
   expect(await selected.body()).toEqual(await (await import('node:fs/promises')).readFile('assets/icons/fretflash-six-line-f.svg'));

@@ -1,4 +1,4 @@
-import { getSpokenClip, getSpokenPlayback, SPOKEN_BANKS } from './speech.js';
+import { getSpokenClip, getSpokenPlayback, SPOKEN_BANKS } from './speech.js?v=043bbc19dc51c1fe';
 
 export function createWebAudioClickPlayer(AudioContextCtor, { fetchFn = globalThis.fetch } = {}) {
   let audioContext = null;
@@ -20,7 +20,7 @@ export function createWebAudioClickPlayer(AudioContextCtor, { fetchFn = globalTh
       const metadata = SPOKEN_BANKS[variant];
       if (!bankPromises.has(metadata.path)) {
         bankPromises.set(metadata.path, Promise.resolve().then(async () => {
-          const response = await fetchFn(metadata.path);
+          const response = await fetchFn(metadata.path + new URL(import.meta.url).search);
           if (!response.ok) throw new Error('Spoken voice could not load');
           const bank = await audioContext.decodeAudioData(await response.arrayBuffer());
           if (bank.duration + 1 / bank.sampleRate < metadata.frames / metadata.sampleRate) throw new Error('Incomplete spoken voice');

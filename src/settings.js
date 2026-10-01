@@ -4,7 +4,7 @@ import {
   KNOWN_NOTE_LABEL_SET,
   TUNING_PRESET_BY_ID,
   normalizePitchLabel,
-} from './music.js';
+} from './music.js?v=043bbc19dc51c1fe';
 
 export const BPM_MIN = 10;
 export const BPM_MAX = 200;

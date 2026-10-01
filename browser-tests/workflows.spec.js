@@ -27,6 +27,10 @@ test('setup journey: native blur, presets, wheel, tuning, subsets and reload', a
   await editor(page, 'fret-range');
   await page.locator('#fret-from').fill('3');
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Increase from fret' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Decrease to fret' })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(page.locator('#fret-to')).toBeFocused();
   await page.locator('#fret-to').fill('15');
   await page.keyboard.press('Enter');

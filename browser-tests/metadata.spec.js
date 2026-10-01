@@ -49,7 +49,7 @@ test.describe('initial HTML', () => {
 test('startup keeps one heading/reference, help state and real transport', async ({ page }) => {
   let release;
   const ready = new Promise(resolve => { release = resolve; });
-  await page.route('**/app.js', async route => { await ready; await route.continue(); });
+  await page.route('**/app.js*', async route => { await ready; await route.continue(); });
   await page.goto('/', { waitUntil: 'commit' });
   try {
     await expect(page.locator('h1')).toBeVisible();

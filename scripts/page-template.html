@@ -26,6 +26,8 @@
       {"@context":"https://schema.org","@type":"WebSite","name":"FretFlash","url":"https://fretflash.vich.io/"}
     </script>
     <meta name="theme-color" content="#191919">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/icons/fretflash-apple-180.png">
     <link rel="preload" href="assets/fonts/inter-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="license" href="assets/fonts/OFL.txt" type="text/plain" title="Inter font — SIL Open Font License 1.1">
     <link rel="icon" type="image/svg+xml" href="assets/icons/fretflash-six-line-f.svg">
@@ -38,7 +40,7 @@
           <details id="quick-reference" class="quick-help">
             <summary>Quick reference</summary>
             <p>Choose notes and press <strong>Start</strong>. After four count-in clicks, play the displayed note on the indicated string, one location per click. Each note travels across the selected strings, low to high. FretFlash keeps time; it does not listen or show answer frets.</p>
-            <p><strong>BPM</strong> sets clicks per minute. Hold +/− to change faster; swipe up/down on the number, or tap to type. <strong>Frets</strong> includes both limits; 0 means open string. Strings with no matching note in that range are skipped.</p>
+            <p><strong>BPM</strong> sets clicks per minute. Hold +/− to change faster; swipe up/down on a number, or tap to type. The same controls adjust both <strong>Frets</strong> limits; 0 means open string. Strings with no matching note in that range are skipped.</p>
             <p><strong>Targets:</strong> <em>One per string</em> gives one click per available string; choose any matching location within the range. <em>All in range</em> gives a click for every matching location: lowest fret first, then the next string.</p>
             <p><strong>Notes:</strong> each selected spelling appears once per round, in shuffled order. C# and Db are separate prompts, even though they sound the same. Notes with no available location are omitted.</p>
             <details>
@@ -47,9 +49,11 @@
               <p><strong>Strings</strong> selects which strings to practice. <strong>Tuning</strong> sets their open notes. Custom tuning takes 6 or 7 space-separated notes, low to high, using # or b for accidentals. Changing tuning selects all strings again.</p>
               <p><strong>Restart</strong> while paused and <strong>Repeat</strong> after finishing replay the same round. <strong>Shuffle</strong> makes a new order. Change BPM while paused or finished without losing the round. <strong>Stop</strong> returns to setup.</p>
               <p><strong>Keyboard:</strong> outside controls, Space starts, pauses or resumes; after finishing it shuffles. Escape closes an editor first, otherwise exits the drill.</p>
+              <p><strong>Offline:</strong> after one complete online visit, FretFlash and spoken cues work offline. Install from your browser's menu; on iPhone/iPad use Share → Add to Home Screen. Updates wait until you stop and choose Update. Browser storage cleanup can remove offline files.</p>
             </details>
           </details>
 <!-- setup:end --></div>
+    <aside class="pwa-notice" aria-label="App maintenance" aria-live="polite" hidden><span></span><button type="button" aria-label="Update app" hidden>Update</button></aside>
     <script type="module" src="app.js"></script>
   </body>
 </html>

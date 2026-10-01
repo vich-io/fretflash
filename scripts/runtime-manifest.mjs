@@ -26,9 +26,13 @@ function references(file, source) {
     for (const match of source.matchAll(/\b(?:import|export)\s*(?:[\s\S]*?\s+from\s*)?["'](\.[^"']+)["']|\bimport\s*\(\s*["'](\.[^"']+)["']\s*\)/g)) refs.push(match[1] || match[2]);
     // The renderer emits an image URL as HTML rather than a module import.
     for (const match of source.matchAll(/["'](assets\/(?:fonts|icons|voice)\/[^"'\s<>]+)["']/g)) refs.push('/' + match[1]);
+    for (const match of source.matchAll(/\.serviceWorker\.register\(\s*["']([^"']+)["']/g)) refs.push(match[1]);
+  } else if (file === 'manifest.json') {
+    for (const icon of JSON.parse(source).icons ?? []) refs.push(icon.src);
   }
   return refs.filter(ref => !/^(?:https?:|data:|#|mailto:)/i.test(ref)).map(ref => {
-    const resolved = ref.startsWith('/') ? ref.slice(1) : posix.normalize(posix.join(dirname(file), ref));
+    const path = ref.split(/[?#]/)[0];
+    const resolved = path.startsWith('/') ? path.slice(1) : posix.normalize(posix.join(dirname(file), path));
     if (!safe(resolved)) throw new Error(`Unsafe runtime reference ${file}: ${ref}`);
     return resolved;
   });
@@ -44,7 +48,7 @@ export async function checkRuntimeGraph() {
     if (!declared.has(path)) throw new Error(`Unlisted runtime graph asset: ${path}`);
     const url = new URL(path, root);
     if (!(await stat(url)).isFile()) throw new Error(`Not a runtime file: ${path}`);
-    if (/\.(?:html|css|js)$/.test(path)) {
+    if (/\.(?:html|css|js|json)$/.test(path)) {
       const source = await readFile(url, 'utf8');
       for (const child of references(path, source)) await visit(child);
     }

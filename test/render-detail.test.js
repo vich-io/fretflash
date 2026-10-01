@@ -23,8 +23,10 @@ import {
 import { getViewModel } from '../src/view-model.js';
 
 import {
-  renderHtml,
+  renderHtml as renderVersionedHtml,
 } from '../src/render.js';
+import { unversion } from '../scripts/offline-release.mjs';
+const renderHtml = (...args) => unversion(renderVersionedHtml(...args));
 
 function defaultTuningSettings() {
   return {
@@ -198,7 +200,7 @@ test('renderHtml renders setup popovers for header cells', () => {
   assert.match(html, /data-bpm-step="1" aria-label="Increase BPM">\+<\/button>/);
   assert.match(html, /data-close-editor>Done<\/button>/);
   assert.doesNotMatch(html, /<label for="bpm">BPM<\/label>/);
-  assert.deepEqual([...html.matchAll(/data-bpm="(\d+)"/g)].map((match) => match[1]), ['30', '40', '50', '60', '70', '80', '100']);
+  assert.deepEqual([...html.matchAll(/data-bpm="(\d+)"/g)].map((match) => match[1]), ['30', '40', '60', '80', '120', '160']);
   assert.match(html, /<button class="is-selected" type="button" data-bpm="40" aria-pressed="true">40<\/button>/);
   assert.doesNotMatch(html, /data-bpm="72"/);
   assert.match(html, /data-popover-target="fret-range"/);
@@ -282,7 +284,8 @@ test('renderHtml renders custom fret range setup and active copy', () => {
 
   assert.doesNotMatch(idleHtml, /data-drill-mode=/);
   assert.match(idleHtml, /<input id="fret-from"[^>]*value="5"/);
-  assert.match(idleHtml, /<label for="fret-to">To<\/label><input id="fret-to"[^>]*value="9"/);
+  assert.match(idleHtml, /<label for="fret-to">To<\/label>/);
+  assert.match(idleHtml, /<input id="fret-to"[^>]*value="9"/);
   assert.doesNotMatch(idleHtml, /<span>to<\/span>/);
   assert.doesNotMatch(idleHtml, /data-fret-range=/);
   assert.match(idleHtml, /<span class="drill-cell-label">Targets<\/span>/);

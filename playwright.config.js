@@ -18,6 +18,7 @@ export default defineConfig({
   use: {
     baseURL: override || 'http://127.0.0.1:4178/',
     browserName: 'chromium',
+    serviceWorkers: 'block', // Dedicated PWA cases allow workers; fault-routing cases stay isolated.
     launchOptions: executablePath ? { executablePath } : {},
     trace: 'retain-on-failure',
   },
