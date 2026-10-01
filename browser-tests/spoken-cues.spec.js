@@ -139,8 +139,8 @@ test('failed voice download is visible and disabling speech restores normal Star
 
 test('Cancel during voice loading revokes the pending Start after the response arrives', async ({ page }) => {
   let release; const gate = new Promise(resolve => { release = resolve; }); await page.route('**/assets/voice/george.wav*', async route => { await gate; await route.continue(); });
-  await probe(page); await page.goto(target); await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click(); await expect(page.locator('#cancel-start-button')).toBeVisible();
-  await page.locator('#cancel-start-button').click(); release(); await page.waitForTimeout(500); await expect(page.locator('.prompt-deck')).toBeVisible();
+  await probe(page); await page.goto(target); await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click(); await expect(page.locator('[data-cancel-start]')).toBeVisible();
+  await page.locator('[data-cancel-start]').click(); release(); await page.waitForTimeout(500); await expect(page.locator('.prompt-deck')).toBeVisible();
   expect(await page.evaluate(() => window.__speechProof.words.length)).toBe(0); expect(await page.evaluate(() => window.__speechProof.clicks.length)).toBe(0);
 });
 
@@ -255,8 +255,8 @@ test('Cancel while tight speech loads prevents late words and supports a fresh r
   let release; const gate=new Promise(resolve=>{release=resolve;});
   await page.route('**/assets/voice/george-tight.wav*',async route=>{await gate;await route.continue();});
   await probe(page); await page.goto(target); await shortDrill(page,200); await page.locator('#spoken-cues-button').click();
-  await page.locator('#start-button').click(); await expect(page.locator('#cancel-start-button')).toBeVisible();
-  await page.locator('#cancel-start-button').click(); release(); await page.waitForTimeout(300);
+  await page.locator('#start-button').click(); await expect(page.locator('[data-cancel-start]')).toBeVisible();
+  await page.locator('[data-cancel-start]').click(); release(); await page.waitForTimeout(300);
   await expect(page.locator('.prompt-deck')).toBeVisible();
   expect(await page.evaluate(()=>window.__speechProof.words.length+window.__speechProof.clicks.length)).toBe(0);
   await page.locator('#start-button').click(); await expect(page.locator('.practice-done')).toBeVisible();
@@ -267,7 +267,8 @@ for (const [strings, variant] of [[1, 'tight'], [2, 'fast'], [6, 'natural']]) {
   test(`live speech enable produces ${variant} audio on the unchanged click grid, off cancels only speech`, async ({ page }) => {
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await probe(page); await page.goto(target);
-    await shortDrill(page, 200, ['C#', 'Db', 'Eb', 'F#', 'Gb', 'Ab', 'Bb'], strings);
+    // Leave room for public-origin voice loading and post-Off click assertions.
+    await shortDrill(page, 200, KNOWN_NOTE_LABELS.filter(label => label.length > 1), strings);
     await page.locator('#start-button').click(); await expect(page.locator('.practice-running')).toBeVisible();
     const order = await page.locator('.progress-label').allTextContents();
     const toggle = page.locator('#spoken-cues-button'); await toggle.click();
@@ -286,7 +287,9 @@ for (const [strings, variant] of [[1, 'tight'], [2, 'fast'], [6, 'natural']]) {
     const clicks = await page.evaluate(() => window.__speechProof.clicks.slice(1));
     for (let i = 1; i < clicks.length; i++) expect(clicks[i] - clicks[i - 1]).toBeCloseTo(.3, 7);
     expect(clicks.some(when => Math.abs(when - word.when) < 1e-8)).toBe(true);
-    await page.locator('#stop-button').click(); expect(errors).toEqual([]);
+    // A short 200-BPM round can finish while the audio assertions run.
+    await page.locator('#stop-button, #setup-button').click();
+    await expect(page.locator('#start-button')).toBeEnabled(); expect(errors).toEqual([]);
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('fretflash.settings.v1')).spokenCues)).toBe(false);
   });
 }

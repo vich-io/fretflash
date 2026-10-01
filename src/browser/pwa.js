@@ -6,13 +6,18 @@ export function setupPwa(notice, isBusy) {
   let feedbackTimer, deadlineTimer;
 
   function refresh() {
+    const slot = document.querySelector('[data-maintenance-slot]');
+    if (slot && notice.parentNode !== slot) slot.append(notice);
     const update = Boolean(registration?.waiting || needsReload), busy = isBusy();
     notice.hidden = !requested && !update && !failed;
     notice.dataset.state = requested ? 'updating' : !update ? 'failed' : busy ? 'waiting' : 'ready';
     button.hidden = requested || !update || busy;
     button.disabled = requested || busy;
-    message.textContent = requested ? 'Updating…' : !update ? 'Offline setup unavailable.'
-      : busy ? 'Update available when stopped.' : delayed ? 'Update did not finish. Try again.' : 'Update available.';
+    message.hidden = update && !requested && !busy;
+    message.textContent = requested ? 'Updating…' : !update ? 'Offline unavailable'
+      : busy ? 'Update when stopped' : 'Update available';
+    button.textContent = delayed ? 'Try again' : 'Update';
+    button.title = delayed ? 'Update did not finish. Try again.' : 'Update app';
   }
   const retry = () => {
     clearTimeout(feedbackTimer); clearTimeout(deadlineTimer);
@@ -53,6 +58,7 @@ export function setupPwa(notice, isBusy) {
     refresh();
   }).catch(() => { failed = !navigator.serviceWorker.controller; refresh(); });
   const check = () => { if (navigator.onLine) registration?.update().catch(() => {}); };
+  refresh();
   window.addEventListener('online', check);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
   return { refresh };

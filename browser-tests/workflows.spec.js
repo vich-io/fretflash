@@ -119,7 +119,8 @@ test('pending audio can be cancelled; a late resolution cannot start playback', 
   });
   await page.goto('/');
   await page.locator('#start-button').click();
-  await expect(page.locator('[role="status"]')).toContainText('Starting audio');
+  await expect(page.locator('#start-button')).toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('#app-feedback')).toBeEmpty();
   await page.keyboard.press('Escape');
   await page.evaluate(() => window.finishAudio());
   await expect(page.locator('.prompt-deck')).toBeVisible();

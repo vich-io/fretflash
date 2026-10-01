@@ -3,7 +3,7 @@ import {
   PITCH_CLASS_INDEX,
   STRING_ORDER,
   normalizePitchLabel,
-} from './music.js?v=8f147a0a6df7dadd';
+} from './music.js?v=f77bd7fecd46f7af';
 
 import {
   DEFAULT_LOCATION_MODE,
@@ -13,7 +13,7 @@ import {
   isValidLocationMode,
   normalizeFretRange,
   normalizeSelectedStringIndexes,
-} from './settings.js?v=8f147a0a6df7dadd';
+} from './settings.js?v=f77bd7fecd46f7af';
 
 export function getFretRangeLabel(fretRange) {
   const range = normalizeFretRange(fretRange);

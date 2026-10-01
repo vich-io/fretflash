@@ -101,7 +101,8 @@ test('tempo edits cancel pending Resume and Repeat without losing the round', as
   await page.locator('#start-button').click(); await page.locator('#pause-button').click();
   const order=await page.locator('.progress-label').allTextContents();
   await page.evaluate(()=>{window.holdResume=true;}); await page.locator('#resume-button').click();
-  await expect(page.locator('#resume-button')).toBeDisabled();
+  await expect(page.locator('#resume-button')).toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('#restart-button')).toBeDisabled();
   await tempo(page,200);
   await page.evaluate(()=>{window.holdResume=false;window.finishResume();});
   await expect(page.locator('.practice-paused')).toBeVisible(); await expect(page.locator('#resume-button')).toBeEnabled();
@@ -110,7 +111,8 @@ test('tempo edits cancel pending Resume and Repeat without losing the round', as
   await expect(page.locator('.practice-context')).toContainText('200');
   await page.locator('.practice-done').waitFor();
   await page.evaluate(()=>{window.holdResume=true;}); await page.locator('#same-order-button').click();
-  await expect(page.locator('#same-order-button')).toBeDisabled(); await tempo(page,180);
+  await expect(page.locator('#same-order-button')).toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('#start-button')).toBeDisabled(); await tempo(page,180);
   await page.evaluate(()=>{window.holdResume=false;window.finishResume();});
   await expect(page.locator('.practice-done')).toBeVisible(); await expect(page.locator('#same-order-button')).toBeEnabled();
   await page.locator('#same-order-button').click(); expect(await page.locator('.progress-label').allTextContents()).toEqual(order);

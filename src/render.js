@@ -3,7 +3,7 @@ import {
   NOTE_PRESETS,
   TUNING_PRESETS,
   createTuningStrings,
-} from './music.js?v=8f147a0a6df7dadd';
+} from './music.js?v=f77bd7fecd46f7af';
 
 import {
   BPM_MAX,
@@ -20,20 +20,20 @@ import {
   normalizeFretRange,
   normalizeSelectedStringIndexes,
   parseFretBoundInput,
-} from './settings.js?v=8f147a0a6df7dadd';
+} from './settings.js?v=f77bd7fecd46f7af';
 
 import {
   createRangeFilteredRound,
   formatRoundDuration,
   getFretRangeLabel,
   getRoundClickCount,
-} from './round.js?v=8f147a0a6df7dadd';
+} from './round.js?v=f77bd7fecd46f7af';
 
 const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 export const PROMPT_DECK_LABELS = NOTE_LETTERS.flatMap(letter => [letter, `${letter}b`, `${letter}#`]);
 
-import { FRET_RANGE_ERROR } from './browser/setup-drafts.js?v=8f147a0a6df7dadd';
-import { getSpokenBpmMax } from './speech.js?v=8f147a0a6df7dadd';
+import { FRET_RANGE_ERROR } from './browser/setup-drafts.js?v=f77bd7fecd46f7af';
+import { getSpokenBpmMax } from './speech.js?v=f77bd7fecd46f7af';
 export { FRET_RANGE_ERROR };
 
 // HTML rendering
@@ -155,7 +155,7 @@ function getLocationModeLabel(locationMode = DEFAULT_LOCATION_MODE) {
 }
 
 function renderBrand() {
-  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=8f147a0a6df7dadd" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
+  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=f77bd7fecd46f7af" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
 }
 
 function renderDrillCell(id, label, value, openPopover, error = '') {
@@ -259,7 +259,7 @@ function renderPracticeStage(content, setup, phase, feedback) {
   return `<main class="app-shell app-shell-practice">
 <div class="practice-stage">
 <div class="setup-app-bar practice-app-bar">
-${renderBrand()}
+${renderBrand()}<div data-maintenance-slot></div>
 </div>
 ${renderPracticeContext(setup, phase)}
 <div class="practice-editor">${editor}</div>
@@ -287,11 +287,11 @@ export function renderHtml(
   const errorHtml = error && error !== FRET_RANGE_ERROR ? `<p class="error" role="alert">${escapeHtml(error)}</p>` : '';
   const hiddenErrors = [['bpm', 'BPM', setupInput.fieldErrors?.bpm], ['fret-range', 'Frets', fretRangeError], ['tuning', 'Tuning', setupInput.fieldErrors?.tuning]].filter(([id,, message]) => message && id !== openPopover);
   const recovery = hiddenErrors.map(([id, label, message]) => `<div class="draft-recovery" role="alert"><p>${escapeHtml(message)}</p><button type="button" data-recover-editor="${id}">Fix ${label}</button></div>`).join('');
-  const feedback = `<div id="app-feedback">${recovery}${hiddenErrors.some(([, , message]) => message === error) ? '' : errorHtml}${setupInput.startPending ? '<p role="status">Starting audio…</p><button id="cancel-start-button" type="button">Cancel</button>' : ''}</div>`;
+  const feedback = `<div id="app-feedback">${recovery}${hiddenErrors.some(([, , message]) => message === error) ? '' : errorHtml}</div>`;
 
   if (view.phase === 'idle') {
     const coverage = getSetupCoverage(setup);
-    const startDisabled = Boolean(setupInput.startPending || invalidRange || coverage.error);
+    const startDisabled = Boolean(invalidRange || coverage.error);
     const coverageError = coverage.error && error !== coverage.error && !invalidRange && !Object.values(setupInput.fieldErrors ?? {}).some(Boolean)
       ? `<p class="error" role="alert">${escapeHtml(coverage.error)}</p>` : '';
     const omissions = coverage.omitted.length
@@ -300,7 +300,7 @@ export function renderHtml(
 <div class="setup-launcher">
 <div class="setup-scroll">
 <div class="setup-app-bar">
-${renderBrand()}
+${renderBrand()}<div data-maintenance-slot></div>
 </div>
 ${renderDrillHeader(setup, renderFretRange, openPopover, setupInput.fieldErrors)}
 ${renderHeaderPopovers(setup, renderFretRange, fretRangeError, openPopover, setupInput.drafts)}

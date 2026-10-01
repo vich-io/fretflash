@@ -1,12 +1,12 @@
-import { createTuningStrings } from './music.js?v=8f147a0a6df7dadd';
+import { createTuningStrings } from './music.js?v=f77bd7fecd46f7af';
 import {
   BPM_MAX, BPM_MIN, cloneFretRange, cloneTuning, createSetup, isValidBpm,
   isValidFretRange, isValidLocationMode, isValidNoteSelection,
   normalizeSelectedStringIndexes, parseBpmInput,
-} from './settings.js?v=8f147a0a6df7dadd';
-import { advanceAfterClick, cloneGeneratedOrder, createIdleState, startPreparedRound } from './state.js?v=8f147a0a6df7dadd';
-import { createRangeFilteredRound, getClickIntervalMs, shuffleSelectedLabels } from './round.js?v=8f147a0a6df7dadd';
-import { getSpokenPlayback, getSpokenBpmMax, spokenCueError, upcomingSpokenLabel } from './speech.js?v=8f147a0a6df7dadd';
+} from './settings.js?v=f77bd7fecd46f7af';
+import { advanceAfterClick, cloneGeneratedOrder, createIdleState, startPreparedRound } from './state.js?v=f77bd7fecd46f7af';
+import { createRangeFilteredRound, getClickIntervalMs, shuffleSelectedLabels } from './round.js?v=f77bd7fecd46f7af';
+import { getSpokenPlayback, getSpokenBpmMax, spokenCueError, upcomingSpokenLabel } from './speech.js?v=f77bd7fecd46f7af';
 
 export function createAppController({
   render, playClick, prepareAudio = () => {},

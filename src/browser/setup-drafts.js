@@ -1,8 +1,8 @@
 import {
   BPM_MIN, FRET_MIN, FRET_MAX, createSetup,
   parseBpmInput, parseFretBoundInput, parseTuningInput, isValidFretRange,
-} from '../settings.js?v=8f147a0a6df7dadd';
-import { getSpokenBpmMax } from '../speech.js?v=8f147a0a6df7dadd';
+} from '../settings.js?v=f77bd7fecd46f7af';
+import { getSpokenBpmMax } from '../speech.js?v=f77bd7fecd46f7af';
 
 export const FRET_RANGE_ERROR = `Choose frets between ${FRET_MIN} and ${FRET_MAX}, with From no higher than To.`;
 

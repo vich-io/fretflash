@@ -3,7 +3,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url('assets/fonts/inter-latin-variable.woff2?v=8f147a0a6df7dadd') format('woff2');
+  src: url('assets/fonts/inter-latin-variable.woff2?v=f77bd7fecd46f7af') format('woff2');
 }
 
 :root {
@@ -26,7 +26,8 @@
 html { min-height: 100%; background: var(--bg); }
 body { margin: 0; min-height: 100svh; background: var(--bg); color: var(--text); }
 .javascript-notice { width: min(100%, calc(var(--setup-width) + 3rem)); margin: 1.5rem auto 0; padding: 0 1.5rem; color: var(--muted); }
-.pwa-notice { width: min(100%, calc(var(--setup-width) + 3rem)); margin: 0 auto; padding: 0 1.5rem 1rem; display: flex; align-items: center; gap: 0.75rem; color: var(--muted); font-size: 0.8rem; -webkit-tap-highlight-color: transparent; }
+[data-maintenance-slot] { flex: 0 0 6.5em; min-height: 2.75rem; margin-left: auto; font-size: 0.8rem; }
+.pwa-notice { min-height: 2.75rem; display: grid; align-content: center; justify-items: end; gap: 0.25rem; color: var(--muted); font-size: inherit; line-height: 1.15; text-align: right; -webkit-tap-highlight-color: transparent; }
 .pwa-notice[hidden] { display: none; }
 .pwa-notice button { padding: 0.25rem 0.75rem; }
 button, input { font: inherit; }
@@ -93,7 +94,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { appearance:
 .setup-tail { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 1rem; }
 .setup-tail .app-footer { margin: 0; }
 .setup-tail:has(.quick-help[open]) { grid-template-columns: minmax(0, 1fr); }
-.setup-app-bar { display: flex; justify-content: flex-start; }
+.setup-app-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 1rem; }
 .brand-heading { margin: 0; font: inherit; }
 .app-brand {
   min-height: 2.75rem;
@@ -242,9 +243,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { appearance:
 .draft-recovery button { padding: 0.4rem 0.8rem; color: var(--text); }
 .field-error { margin: 1rem 0 0; }
 #app-feedback:empty { display: none; }
-#app-feedback [role="status"] { color: var(--muted); font-size: 0.85rem; }
 summary { cursor: pointer; min-height: 2.75rem; align-content: center; }
 .quick-help { color: var(--muted); font-size: 0.85rem; }
+.quick-help summary { width: fit-content; max-width: 100%; }
 .quick-help p { margin: 0.5rem 0 1rem; line-height: 1.6; }
 .quick-help strong { color: var(--text); font-weight: 500; }
 .quick-help details { border-top: 1px solid var(--line); }

@@ -1,15 +1,15 @@
-import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js?v=8f147a0a6df7dadd';
+import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js?v=f77bd7fecd46f7af';
 import { FRET_MIN, FRET_MAX, isValidFretRange, parseFretBoundInput,
- BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js?v=8f147a0a6df7dadd';
-import { createIdleState } from './src/state.js?v=8f147a0a6df7dadd';
-import { shuffleSelectedLabels } from './src/round.js?v=8f147a0a6df7dadd';
-import { getViewModel } from './src/view-model.js?v=8f147a0a6df7dadd';
-import { renderHtml } from './src/render.js?v=8f147a0a6df7dadd';
-import { createWebAudioClickPlayer } from './src/audio.js?v=8f147a0a6df7dadd';
-import { createSetupDrafts } from './src/browser/setup-drafts.js?v=8f147a0a6df7dadd';
-import { bindNumericGestures } from './src/browser/numeric-gestures.js?v=8f147a0a6df7dadd';
-import { createAppController } from './src/controller.js?v=8f147a0a6df7dadd';
-import { setupPwa } from './src/browser/pwa.js?v=8f147a0a6df7dadd';
+ BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js?v=f77bd7fecd46f7af';
+import { createIdleState } from './src/state.js?v=f77bd7fecd46f7af';
+import { shuffleSelectedLabels } from './src/round.js?v=f77bd7fecd46f7af';
+import { getViewModel } from './src/view-model.js?v=f77bd7fecd46f7af';
+import { renderHtml } from './src/render.js?v=f77bd7fecd46f7af';
+import { createWebAudioClickPlayer } from './src/audio.js?v=f77bd7fecd46f7af';
+import { createSetupDrafts } from './src/browser/setup-drafts.js?v=f77bd7fecd46f7af';
+import { bindNumericGestures } from './src/browser/numeric-gestures.js?v=f77bd7fecd46f7af';
+import { createAppController } from './src/controller.js?v=f77bd7fecd46f7af';
+import { setupPwa } from './src/browser/pwa.js?v=f77bd7fecd46f7af';
 
 function browserStorage() {
   try { return globalThis.localStorage; } catch { return undefined; }
@@ -30,6 +30,8 @@ function updateChildren(parent, next) {
       return;
     }
     if (current.nodeType !== 1) return;
+    // The PWA manager owns this stable node and its listeners across ordinary paints.
+    if (current.hasAttribute('data-maintenance-slot') && replacement.hasAttribute('data-maintenance-slot')) return;
     for (const attribute of [...current.attributes]) {
       if (current.tagName === 'DETAILS' && attribute.name === 'open') continue;
       if (!replacement.hasAttribute(attribute.name)) current.removeAttribute(attribute.name);
@@ -64,6 +66,7 @@ export function mountBrowserApp({
   let painting = false;
   let previousPhase = 'idle';
   let numericGestures;
+  let pendingAction = '', pendingFeedback = false, pendingTimer;
   const inputFields = { bpm: 'bpm', 'fret-from': 'from', 'fret-to': 'to', 'custom-tuning': 'tuning' };
 
   function paint(state = controller.getState()) {
@@ -77,7 +80,19 @@ export function mountBrowserApp({
     template.innerHTML = html;
     template.content.querySelector('#quick-reference-slot')?.replaceWith(quickReference.cloneNode(true));
     if (state.startPending) {
-      for (const button of template.content.querySelectorAll('#start-button, #same-order-button, #restart-button, #resume-button')) button.disabled = true;
+      if (!pendingTimer && !pendingFeedback) pendingTimer = setTimeout(() => {
+        pendingTimer = undefined; pendingFeedback = true; paint();
+      }, 300);
+      for (const button of template.content.querySelectorAll('#start-button, #same-order-button, #restart-button, #resume-button')) {
+        button.disabled = button.id !== pendingAction;
+        if (button.disabled) continue;
+        button.dataset.cancelStart = '';
+        button.setAttribute('aria-busy', 'true');
+        if (pendingFeedback) button.textContent = 'Cancel';
+        button.setAttribute('aria-label', `${button.textContent} (preparing; press to cancel)`);
+      }
+    } else {
+      clearTimeout(pendingTimer); pendingTimer = undefined; pendingFeedback = false;
     }
     updateChildren(root, template.content);
     numericGestures?.reconcile();
@@ -125,6 +140,7 @@ export function mountBrowserApp({
       return;
     }
     openPopover = '';
+    pendingAction = repeat ? 'same-order-button' : 'start-button';
     const started = repeat ? controller.repeatSameOrder(String(controller.getState().bpm)) : controller.start(String(controller.getState().bpm));
     Promise.resolve(started).then(didStart => { if (didStart) persist(); });
   }
@@ -162,12 +178,15 @@ export function mountBrowserApp({
   function continueRound(restart = false) {
     if (controller.getState().startPending || !commit()) return;
     openPopover = '';
+    pendingAction = restart ? 'restart-button' : 'resume-button';
     if (restart) controller.restartCurrent(); else controller.resume();
   }
 
   function handleClick(event) {
     const button = event.target.closest('button');
     if (!button || !root.contains(button) || button.disabled) return;
+    if (button.hasAttribute('data-cancel-start')) { stop(); return; }
+    if (button.closest('.pwa-notice')) return;
     if (button.dataset.popoverTarget || button.dataset.recoverEditor) {
       const target = button.dataset.popoverTarget || button.dataset.recoverEditor;
       if (openPopover === target) { closeEditor(); return; }
@@ -189,7 +208,7 @@ export function mountBrowserApp({
       'start-button': () => start(), 'same-order-button': () => start(true),
       'pause-button': () => controller.pause(), 'resume-button': () => continueRound(),
       'restart-button': () => continueRound(true), 'stop-button': stop,
-      'brand-home-button': stop, 'setup-button': stop, 'cancel-start-button': stop,
+      'brand-home-button': stop, 'setup-button': stop,
     };
     if (transport[button.id]) { transport[button.id](); return; }
     const data = button.dataset;

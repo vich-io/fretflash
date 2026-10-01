@@ -115,8 +115,8 @@ for (const pending of [false, true]) test(`Start racing delayed activation (${pe
     await page.waitForTimeout(400); await page.locator('#start-button').click();
     await expect(page.locator('.pwa-notice')).toHaveAttribute('data-state', 'waiting');
     await expect(page).toHaveTitle('FretFlash qa-a');
-    await expect(page.locator(pending ? '#cancel-start-button' : '.practice-countin')).toBeVisible();
-    await page.locator(pending ? '#cancel-start-button' : '#stop-button').click(); await expect(page).toHaveTitle('FretFlash qa-a');
+    await expect(page.locator(pending ? '[data-cancel-start]' : '.practice-countin')).toBeVisible();
+    await page.locator(pending ? '[data-cancel-start]' : '#stop-button').click(); await expect(page).toHaveTitle('FretFlash qa-a');
     await page.getByRole('button', { name: 'Update app' }).click(); await expect(page).toHaveTitle('FretFlash qa-b');
   } finally { await server.close(); }
 });
@@ -156,7 +156,7 @@ test('failed first installation leaves online playback usable and a later comple
   const original = release('qa-first'), broken = new Map(original); broken.delete('assets/voice/george-tight.wav');
   const server = await serveRelease(broken);
   try {
-    await page.goto(server.url); await expect(page.locator('.pwa-notice')).toContainText('Offline setup unavailable');
+    await page.goto(server.url); await expect(page.locator('.pwa-notice')).toContainText('Offline unavailable');
     expect(await page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(false);
     await page.locator('#start-button').click(); await expect(page.locator('#stop-button')).toBeVisible(); await page.locator('#stop-button').click();
     server.set(original); await page.reload(); await ready(page); await expect(page.locator('.pwa-notice')).toBeHidden();
