@@ -34,7 +34,7 @@ export async function serveRelease(initial) {
     const path = new URL(request.url, 'http://localhost').pathname;
     if (path === '/index.html') { response.writeHead(301, { Location: '/' }).end(); return; }
     const name = path === '/' ? 'index.html' : path.slice(1), bytes = files.get(name);
-    const type = { js: 'text/javascript', css: 'text/css', html: 'text/html', json: 'application/json', png: 'image/png', svg: 'image/svg+xml', woff2: 'font/woff2', wav: 'audio/wav', txt: 'text/plain' }[name.split('.').pop()];
+    const type = { js: 'text/javascript', css: 'text/css', html: 'text/html', json: 'application/json', png: 'image/png', svg: 'image/svg+xml', woff2: 'font/woff2', wav: 'audio/wav', webm: 'audio/webm', txt: 'text/plain' }[name.split('.').pop()];
     response.writeHead(bytes ? 200 : 404, { 'Content-Type': type ?? 'text/plain', 'Cache-Control': 'no-store' });
     response.end(bytes ?? 'Not found');
   });

@@ -132,13 +132,13 @@ test('one-target 200 BPM works through Start, remaining Resume, Restart and exac
 });
 
 test('failed voice download is visible and disabling speech restores normal Start', async ({ page }) => {
-  await page.route('**/assets/voice/george.wav*', route => route.abort()); await page.goto(target); await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click();
+  await page.route('**/assets/voice/george.webm*', route => route.abort()); await page.goto(target); await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click();
   await expect(page.locator('[role="alert"]')).toContainText('Audio could not start'); await expect(page.locator('.prompt-deck')).toBeVisible();
   await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click(); await expect(page.locator('.practice-countin')).toBeVisible();
 });
 
 test('Cancel during voice loading revokes the pending Start after the response arrives', async ({ page }) => {
-  let release; const gate = new Promise(resolve => { release = resolve; }); await page.route('**/assets/voice/george.wav*', async route => { await gate; await route.continue(); });
+  let release; const gate = new Promise(resolve => { release = resolve; }); await page.route('**/assets/voice/george.webm*', async route => { await gate; await route.continue(); });
   await probe(page); await page.goto(target); await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click(); await expect(page.locator('[data-cancel-start]')).toBeVisible();
   await page.locator('[data-cancel-start]').click(); release(); await page.waitForTimeout(500); await expect(page.locator('.prompt-deck')).toBeVisible();
   expect(await page.evaluate(() => window.__speechProof.words.length)).toBe(0); expect(await page.evaluate(() => window.__speechProof.clicks.length)).toBe(0);
@@ -180,7 +180,7 @@ test('200 BPM uses the bounded fallback only for the crowded call, with natural 
     expect(proof.clicks.some(when => Math.abs(when - word.when) < 1e-8)).toBeTruthy();
   }
   expect(proof.peaks.some(p => p.time > first.when + .06 && p.time < first.when + first.duration && p.peak > .01)).toBeTruthy();
-  expect(requests.sort()).toEqual(['/assets/voice/george-fast.wav', '/assets/voice/george.wav']);
+  expect(requests.sort()).toEqual(['/assets/voice/george-fast.webm', '/assets/voice/george.webm']);
   await page.locator('#same-order-button').click();
   await expect.poll(() => page.evaluate(() => window.__speechProof.words.length), { intervals: [50] }).toBe(3);
   await page.locator('#pause-button').click();
@@ -190,7 +190,7 @@ test('200 BPM uses the bounded fallback only for the crowded call, with natural 
 
 for(const [variant,strings] of [['fast',2],['tight',1]]) {
   test(`a failed ${variant} bank supports speech-off recovery and a successful speech-on retry`,async ({ page }) => {
-    const route=`**/assets/voice/george-${variant}.wav*`;
+    const route=`**/assets/voice/george-${variant}.webm*`;
     await page.route(route,r=>r.abort()); await page.goto(target); await shortDrill(page,200,['C#','Db'],strings);
     await page.locator('#spoken-cues-button').click(); await page.locator('#start-button').click();
     await expect(page.locator('[role="alert"]')).toContainText('Audio could not start'); await expect(page.locator('.prompt-deck')).toBeVisible();
@@ -232,7 +232,7 @@ test('all 21 spellings play at one-target 200 BPM with real output, complete cal
       expect(proof.peaks.some(p=>p.time>word.when+.06 && p.time<word.when+word.duration && p.peak>.01)).toBe(true);
     } else expect(KNOWN_NOTE_LABELS.some(label=>Math.abs(getSpokenClip(label).duration-word.duration)<=1/word.sampleRate)).toBe(true);
   }
-  expect(requests.sort()).toEqual(['/assets/voice/george-tight.wav','/assets/voice/george.wav']);
+  expect(requests.sort()).toEqual(['/assets/voice/george-tight.webm','/assets/voice/george.webm']);
   const identities=await page.evaluate(async labels=>{
     const { SPOKEN_BANKS,getSpokenClip }=await import('/src/speech.js');
     const context=window.__speechProof.contexts[0],maps={};
@@ -253,7 +253,7 @@ test('all 21 spellings play at one-target 200 BPM with real output, complete cal
 
 test('Cancel while tight speech loads prevents late words and supports a fresh retry',async ({ page }) => {
   let release; const gate=new Promise(resolve=>{release=resolve;});
-  await page.route('**/assets/voice/george-tight.wav*',async route=>{await gate;await route.continue();});
+  await page.route('**/assets/voice/george-tight.webm*',async route=>{await gate;await route.continue();});
   await probe(page); await page.goto(target); await shortDrill(page,200); await page.locator('#spoken-cues-button').click();
   await page.locator('#start-button').click(); await expect(page.locator('[data-cancel-start]')).toBeVisible();
   await page.locator('[data-cancel-start]').click(); release(); await page.waitForTimeout(300);
@@ -295,7 +295,7 @@ for (const [strings, variant] of [[1, 'tight'], [2, 'fast'], [6, 'natural']]) {
 }
 
 test('live voice download failure stays visible across clicks and retry works without restarting', async ({ page }) => {
-  await probe(page); await page.route('**/assets/voice/*.wav*', route => route.abort());
+  await probe(page); await page.route('**/assets/voice/*.webm*', route => route.abort());
   await page.goto(target); await shortDrill(page, 200, ['C#','Db','Eb','F#'], 6);
   await page.locator('#start-button').click(); await expect(page.locator('.practice-running')).toBeVisible();
   const order = await page.locator('.progress-label').allTextContents();
@@ -305,7 +305,7 @@ test('live voice download failure stays visible across clicks and retry works wi
   const before = await page.evaluate(() => window.__speechProof.clicks.length);
   await expect.poll(() => page.evaluate(() => window.__speechProof.clicks.length)).toBeGreaterThan(before + 1);
   await expect(page.locator('[role="alert"]')).toBeVisible();
-  await page.unroute('**/assets/voice/*.wav*'); await page.locator('#spoken-cues-button').click();
+  await page.unroute('**/assets/voice/*.webm*'); await page.locator('#spoken-cues-button').click();
   await expect.poll(() => page.evaluate(() => window.__speechProof.words.length)).toBeGreaterThan(0);
   await expect(page.locator('[role="alert"]')).toHaveCount(0);
   expect(await page.locator('.progress-label').allTextContents()).toEqual(order);
@@ -315,7 +315,7 @@ test('live voice download failure stays visible across clicks and retry works wi
 test('live loading can be switched off, then re-enabled; a late download cannot restart a stopped drill', async ({ page }) => {
   let release; const gate = new Promise(resolve => { release = resolve; });
   let requests = 0;
-  await page.route('**/assets/voice/*.wav*', async route => { requests++; await gate; await route.continue(); });
+  await page.route('**/assets/voice/*.webm*', async route => { requests++; await gate; await route.continue(); });
   await probe(page); await page.goto(target); await shortDrill(page, 200, ['C#','Db','Eb'], 6);
   await page.locator('#start-button').click(); await expect(page.locator('.practice-running')).toBeVisible();
   const controlBox = await page.locator('#spoken-cues-button').boundingBox();

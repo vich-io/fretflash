@@ -70,10 +70,10 @@ test('natural, moderate and tight buffers prepare lazily with playbackRate 1 and
   const setup={ spokenCues:true,bpm:200,selectedLabels:['C#','Db'] };
   await player.prepare({ ...setup,spokenOrder:[group('C#',2),group('Db',2)] });
   player.speak({ label:'C#',variant:'fast' }); assert.ok(sources.at(-1).buffer.duration<=.55+1/44100);
-  assert.deepEqual(requests.sort(),['assets/voice/george-fast.wav','assets/voice/george.wav']);
+  assert.deepEqual(requests.sort(),['assets/voice/george-fast.webm','assets/voice/george.webm']);
   await player.prepare({ ...setup,spokenOrder:[group('C#',1),group('Db',1)] });
   player.speak({ label:'C#',variant:'tight' }); assert.ok(sources.at(-1).buffer.duration<=.25+1/44100);
-  assert.equal(requests.length,3); assert.ok(requests.includes('assets/voice/george-tight.wav'));
+  assert.equal(requests.length,3); assert.ok(requests.includes('assets/voice/george-tight.webm'));
   await player.prepare({ ...setup,bpm:40,spokenOrder:[group('C#',1),group('Db',1)] });
   player.speak({ label:'C#' }); assert.equal(sources.at(-1).buffer.duration,speech.getSpokenClip('C#').duration);
   assert.equal(requests.length,3); assert.ok(sources.every(source=>source.playbackRate.value===1));

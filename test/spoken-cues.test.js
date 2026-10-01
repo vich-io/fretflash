@@ -49,7 +49,7 @@ test('all written spellings have natural George clips without multi-voice or fit
   assert.equal(typeof speech.getSpokenClip, 'function');
   assert.equal(speech.fitSpokenWord, undefined); assert.equal(speech.spokenWordSlots, undefined);
   assert.equal(speech.SPOKEN_VOICES, undefined); assert.equal(speech.isValidSpokenVoice, undefined);
-  assert.equal(speech.SPOKEN_BANK.path, 'assets/voice/george.wav');
+  assert.equal(speech.SPOKEN_BANK.path, 'assets/voice/george.webm');
   assert.deepEqual(Object.keys(speech.SPOKEN_BANK.clips).sort(), [...KNOWN_NOTE_LABELS].sort());
   for (const label of KNOWN_NOTE_LABELS) {
     const c = speech.getSpokenClip(label); assert.ok(c.endFrame > c.startFrame); assert.ok(c.duration > .2 && c.duration < 1.1);

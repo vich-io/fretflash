@@ -1,15 +1,15 @@
-import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js?v=f77bd7fecd46f7af';
+import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js?v=3ec35fda7bf8f641';
 import { FRET_MIN, FRET_MAX, isValidFretRange, parseFretBoundInput,
- BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js?v=f77bd7fecd46f7af';
-import { createIdleState } from './src/state.js?v=f77bd7fecd46f7af';
-import { shuffleSelectedLabels } from './src/round.js?v=f77bd7fecd46f7af';
-import { getViewModel } from './src/view-model.js?v=f77bd7fecd46f7af';
-import { renderHtml } from './src/render.js?v=f77bd7fecd46f7af';
-import { createWebAudioClickPlayer } from './src/audio.js?v=f77bd7fecd46f7af';
-import { createSetupDrafts } from './src/browser/setup-drafts.js?v=f77bd7fecd46f7af';
-import { bindNumericGestures } from './src/browser/numeric-gestures.js?v=f77bd7fecd46f7af';
-import { createAppController } from './src/controller.js?v=f77bd7fecd46f7af';
-import { setupPwa } from './src/browser/pwa.js?v=f77bd7fecd46f7af';
+ BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js?v=3ec35fda7bf8f641';
+import { createIdleState } from './src/state.js?v=3ec35fda7bf8f641';
+import { shuffleSelectedLabels } from './src/round.js?v=3ec35fda7bf8f641';
+import { getViewModel } from './src/view-model.js?v=3ec35fda7bf8f641';
+import { renderHtml } from './src/render.js?v=3ec35fda7bf8f641';
+import { createWebAudioClickPlayer } from './src/audio.js?v=3ec35fda7bf8f641';
+import { createSetupDrafts } from './src/browser/setup-drafts.js?v=3ec35fda7bf8f641';
+import { bindNumericGestures } from './src/browser/numeric-gestures.js?v=3ec35fda7bf8f641';
+import { createAppController } from './src/controller.js?v=3ec35fda7bf8f641';
+import { setupPwa } from './src/browser/pwa.js?v=3ec35fda7bf8f641';
 
 function browserStorage() {
   try { return globalThis.localStorage; } catch { return undefined; }

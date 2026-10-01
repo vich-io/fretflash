@@ -26,7 +26,8 @@ export function buildWorker(files, version) {
   const source = files.get('sw.js').toString();
   if (!markers.test(source)) throw new Error('sw.js requires one precache marker pair');
   const body = source.replace(markers, '// precache:generated');
-  const assets = [...files].filter(([name]) => name !== 'sw.js').map(([name, bytes]) => ({
+  // Social metadata needs the preview online, not in the practice cache.
+  const assets = [...files].filter(([name]) => name !== 'sw.js' && name !== 'assets/share-card.png').map(([name, bytes]) => ({
     url: name === 'index.html' ? '/' : `/${name}?v=${version}`,
     integrity: `sha256-${createHash('sha256').update(bytes).digest('base64')}`,
   })).sort((a, b) => a.url.localeCompare(b.url));
@@ -37,8 +38,8 @@ export function buildWorker(files, version) {
 export function prepareOffline(original) {
   const normalized = [...original].filter(([name]) => name !== 'sw.js').map(([name, bytes]) => [name, textual(name) ? unversion(bytes.toString()) : bytes.toString('base64')]);
   const body = original.get('sw.js').toString().replace(markers, '// precache:generated');
-  // A versioner change can alter emitted bytes without changing authored sources.
-  const version = digest(JSON.stringify(normalized) + body + versionRuntime.toString() + unversion.toString() + textual.toString()).slice(0, 16);
+  // Packaging changes can alter emitted bytes without changing authored sources.
+  const version = digest(JSON.stringify(normalized) + body + versionRuntime.toString() + buildWorker.toString() + unversion.toString() + textual.toString()).slice(0, 16);
   const files = versionRuntime(original, version);
   files.set('sw.js', Buffer.from(buildWorker(files, version)));
   return { files, version };

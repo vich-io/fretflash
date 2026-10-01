@@ -53,7 +53,7 @@ test('update protects an active/paused drill and another open round; only the st
     await expect(other).toHaveTitle('FretFlash qa-a'); expect(await other.evaluate(() => window.oldRound)).toBe(true);
     await expect(other.locator('#stop-button')).toBeVisible();
     expect(await other.evaluate(async () => await (await fetch('/app.js?v=qa-a')).text())).toBe(original.get('app.js').toString());
-    expect(await other.evaluate(async () => (await (await fetch('/assets/voice/george-tight.wav?v=qa-a')).arrayBuffer()).byteLength)).toBe(original.get('assets/voice/george-tight.wav').length);
+    expect(await other.evaluate(async () => (await (await fetch('/assets/voice/george-tight.webm?v=qa-a')).arrayBuffer()).byteLength)).toBe(original.get('assets/voice/george-tight.webm').length);
   } finally { await server.close(); }
 });
 
@@ -65,7 +65,7 @@ test('missing/corrupt candidates reject the whole cache and preserve the current
     for (const kind of ['corrupt', 'missing']) {
       const broken = release(`qa-${kind}`);
       if (kind === 'corrupt') broken.set('style.css', Buffer.from('wrong bytes'));
-      else broken.delete('assets/voice/george-tight.wav');
+      else broken.delete('assets/voice/george-tight.webm');
       server.set(broken); expect(await update(page)).toBe('redundant');
       expect(await page.evaluate(() => caches.keys())).toEqual(before);
       await expect(page.getByRole('button', { name: 'Update app' })).toBeHidden();
@@ -93,7 +93,7 @@ test('exact corrupted A rollback after A→B→C preserves every retained A byte
     expect(await other.evaluate(() => window.oldRound)).toBe(true);
     await context.setOffline(true);
     expect(await other.evaluate(async () => await (await fetch('/app.js?v=qa-a')).text())).toBe(original.get('app.js').toString());
-    expect(await other.evaluate(async () => (await (await fetch('/assets/voice/george.wav?v=qa-a')).arrayBuffer()).byteLength)).toBe(original.get('assets/voice/george.wav').length);
+    expect(await other.evaluate(async () => (await (await fetch('/assets/voice/george.webm?v=qa-a')).arrayBuffer()).byteLength)).toBe(original.get('assets/voice/george.webm').length);
     await page.reload(); await expect(page).toHaveTitle('FretFlash qa-c'); await expect(page.locator('#start-button')).toBeEnabled();
   } finally { await server.close(); }
 });
@@ -153,7 +153,7 @@ test('zero-client activation cleans only obsolete FretFlash caches', async ({ pa
 });
 
 test('failed first installation leaves online playback usable and a later complete visit installs', async ({ page }) => {
-  const original = release('qa-first'), broken = new Map(original); broken.delete('assets/voice/george-tight.wav');
+  const original = release('qa-first'), broken = new Map(original); broken.delete('assets/voice/george-tight.webm');
   const server = await serveRelease(broken);
   try {
     await page.goto(server.url); await expect(page.locator('.pwa-notice')).toContainText('Offline unavailable');

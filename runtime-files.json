@@ -27,8 +27,8 @@
     "sw.js",
     "assets/share-card.png",
 
-    "assets/voice/george.wav",
-    "assets/voice/george-fast.wav",
-    "assets/voice/george-tight.wav"
+    "assets/voice/george.webm",
+    "assets/voice/george-fast.webm",
+    "assets/voice/george-tight.webm"
   ]
 }

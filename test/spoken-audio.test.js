@@ -36,7 +36,7 @@ test('each complete name starts once on the beat at natural length/rate, indepen
   await h.player.prepare({ spokenCues: true, bpm: 200, selectedLabels: ['C#'] });
   h.player.speak({ label: 'C#', when: 5 });
   assert.equal(h.sources[1].buffer, first); assert.equal(h.requests.length, 1);
-  assert.equal(h.requests[0][0], 'assets/voice/george.wav');
+  assert.equal(h.requests[0][0], 'assets/voice/george.webm');
 });
 
 test('Stop cancels active and future whole-phrase sources immediately', async () => {

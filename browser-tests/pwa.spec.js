@@ -2,7 +2,8 @@ import { test, expect, chromium } from '@playwright/test';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { release, serveRelease } from './helpers/pwa-server.js';
 
 test.use({ serviceWorkers: 'allow' });
 const ready = page => expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker?.controller)), { timeout: 15000 }).toBe(true);
@@ -42,6 +43,35 @@ test('PWA has stable identity, correct manifest MIME and decoded launcher icons'
   expect((await cdp.send('Page.getAppManifest')).errors).toEqual([]);
 });
 
+test('fresh install omits the social preview but still serves its metadata URL online', async ({ page, context }) => {
+  const requests = [];
+  context.on('request', request => requests.push(new URL(request.url()).pathname));
+  await page.goto('/'); await expect(page.locator('#start-button')).toBeEnabled(); await ready(page);
+  expect(requests).not.toContain('/assets/share-card.png');
+  const cachedPaths = await page.evaluate(async () => {
+    const names = (await caches.keys()).filter(name => name.startsWith('fretflash-offline-'));
+    const cache = await caches.open(names[0]);
+    return (await cache.keys()).map(request => new URL(request.url).pathname);
+  });
+  expect(cachedPaths).not.toContain('/assets/share-card.png');
+  expect(cachedPaths).toContain('/assets/fonts/inter-latin-variable.woff2');
+  const previewURL = await page.locator('meta[property="og:image"]').getAttribute('content');
+  expect(new URL(previewURL).pathname).toBe('/assets/share-card.png');
+  const response = await page.request.get('/assets/share-card.png');
+  expect(response.status()).toBe(200); expect(response.headers()['content-type']).toMatch(/^image\/png/);
+  expect(await response.body()).toEqual(readFileSync('assets/share-card.png'));
+});
+
+test('a missing metadata-only preview does not block offline installation', async ({ page }) => {
+  const files = release('qa-no-preview');
+  files.delete('assets/share-card.png');
+  const server = await serveRelease(files);
+  try {
+    await page.goto(server.url); await expect(page.locator('#start-button')).toBeEnabled(); await ready(page);
+    expect((await page.request.get(`${server.url}assets/share-card.png`)).status()).toBe(404);
+  } finally { await server.close(); }
+});
+
 test('normal-profile installation survives browser restart with fonts, saved setup and all speech banks offline', async ({ baseURL }) => {
   test.setTimeout(60000);
   const directory = await mkdtemp(join(tmpdir(), 'fretflash-offline-'));
@@ -57,9 +87,9 @@ test('normal-profile installation survives browser restart with fonts, saved set
     const bankPaths = await page.evaluate(async () => {
       const names = (await caches.keys()).filter(name => name.startsWith('fretflash-offline-'));
       const requests = await (await caches.open(names[0])).keys();
-      return requests.map(request => new URL(request.url).pathname).filter(path => path.endsWith('.wav')).sort();
+      return requests.map(request => new URL(request.url).pathname).filter(path => path.endsWith('.webm')).sort();
     });
-    expect(bankPaths).toEqual(['/assets/voice/george-fast.wav', '/assets/voice/george-tight.wav', '/assets/voice/george.wav']);
+    expect(bankPaths).toEqual(['/assets/voice/george-fast.webm', '/assets/voice/george-tight.webm', '/assets/voice/george.webm']);
     await page.locator('[data-popover-target="bpm"]').click(); await page.locator('#bpm').fill('137'); await page.keyboard.press('Enter');
     await context.close();
     context = await chromium.launchPersistentContext(directory, { ...options, offline: true });

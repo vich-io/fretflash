@@ -1,9 +1,9 @@
 @font-face {
   font-family: 'Inter';
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 400 700;
   font-display: swap;
-  src: url('assets/fonts/inter-latin-variable.woff2?v=f77bd7fecd46f7af') format('woff2');
+  src: url('assets/fonts/inter-latin-variable.woff2?v=3ec35fda7bf8f641') format('woff2');
 }
 
 :root {

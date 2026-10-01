@@ -27,11 +27,11 @@ test('one selector prefers natural, then the accepted moderate fallback, then ti
   assert.equal(speech.getSpokenPlayback('Done',200,1),null);
 });
 
-test('tight bank covers every complete spelling within the one-target maximum-rate budget with nonzero bounded PCM', () => {
+test('tight source bank covers every complete spelling within the one-target maximum-rate budget with nonzero bounded PCM', () => {
   const bank=speech.SPOKEN_BANKS?.tight;
   assert.ok(bank,'tight bank metadata');
   assert.deepEqual(Object.keys(bank.clips).sort(),[...KNOWN_NOTE_LABELS].sort());
-  const wav=readFileSync(new URL(`../${bank.path}`,import.meta.url));
+  const wav=readFileSync(new URL('../assets/voice/george-tight.wav',import.meta.url));
   assert.equal(wav.toString('ascii',0,4),'RIFF'); assert.equal(wav.toString('ascii',8,12),'WAVE');
   assert.equal(wav.readUInt16LE(20),1); assert.equal(wav.readUInt16LE(22),1); assert.equal(wav.readUInt32LE(24),bank.sampleRate);
   assert.equal(wav.toString('ascii',36,40),'data'); assert.equal(wav.length,44+bank.frames*2);
