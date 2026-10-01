@@ -57,7 +57,7 @@ test('keyboard opens editor directly and Done returns focus', async ({ page }) =
 test('paused and completed tempo edits preserve sequence and reject invalid drafts', async ({ page }) => {
   await open(page); await page.locator('[data-preset="clear"]').click();
   for(const label of ['C','D']) await page.locator(`[data-note-label="${label}"]`).click();
-  await tempo(page,240); await page.locator('#start-button').click();
+  await tempo(page,200); await page.locator('#start-button').click();
   await page.locator('.practice-running').waitFor(); await page.locator('#pause-button').click();
   const order=await page.locator('.progress-label').allTextContents();
   const cue=await page.locator('.practice-cue-row').innerText();
@@ -67,7 +67,7 @@ test('paused and completed tempo edits preserve sequence and reject invalid draf
   await page.locator('#resume-button').click();
   await page.waitForTimeout(800); await expect(page.locator('.practice-context')).toContainText('180');
   await page.locator('.practice-done').waitFor();
-  await page.locator('[data-popover-target="bpm"]').click(); await page.locator('#bpm').fill('19');
+  await page.locator('[data-popover-target="bpm"]').click(); await page.locator('#bpm').fill('9');
   await page.locator('#same-order-button').click(); await expect(page.locator('.practice-done')).toBeVisible();
   await expect(page.locator('[role="alert"]:visible').first()).toContainText('Choose a BPM');
   await page.locator('[data-popover-target="bpm"]').click(); await page.locator('#bpm').fill('200'); await page.keyboard.press('Enter');
@@ -97,7 +97,7 @@ test('tempo edits cancel pending Resume and Repeat without losing the round', as
       resume(){ return window.holdResume ? new Promise(resolve=>{window.finishResume=resolve;}) : super.resume(); }
     };
   });
-  await open(page); await page.locator('[data-preset="clear"]').click(); await page.locator('[data-note-label="C"]').click(); await tempo(page,240);
+  await open(page); await page.locator('[data-preset="clear"]').click(); await page.locator('[data-note-label="C"]').click(); await tempo(page,200);
   await page.locator('#start-button').click(); await page.locator('#pause-button').click();
   const order=await page.locator('.progress-label').allTextContents();
   await page.evaluate(()=>{window.holdResume=true;}); await page.locator('#resume-button').click();

@@ -41,10 +41,10 @@ test('invalid range draft survives switching editors without mutating committed 
 test('invalid BPM Start displays actionable error despite outside-click bubbling', async ({ page }) => {
   await setup(page);
   await page.locator('[data-popover-target="bpm"]').click();
-  await page.locator('#bpm').fill('19');
+  await page.locator('#bpm').fill('9');
   await page.locator('#start-button').click();
   await expect(page.locator('.prompt-deck')).toBeVisible();
-  await expect(alert(page)).toContainText('Choose a BPM between 20 and 240.');
+  await expect(alert(page)).toContainText('Choose a BPM between 10 and 200.');
 });
 
 test('unchanged tuning visit preserves the selected-string subset', async ({ page }) => {
@@ -98,12 +98,12 @@ test('Pause retains the cue and Resume advances once on a shared controlled cloc
   await page.clock.pauseAt(1000);
   await setup(page);
   await page.locator('[data-popover-target="bpm"]').click();
-  await page.locator('#bpm').fill('240');
+  await page.locator('#bpm').fill('200');
   await page.keyboard.press('Tab');
   await page.keyboard.press('Escape');
   await page.locator('#start-button').click();
   await expect(page.locator('.practice-countin')).toBeVisible();
-  await page.clock.runFor(1250);
+  await page.clock.runFor(5 * 60000 / 200);
   await expect(page.locator('.practice-running')).toBeVisible();
   const cue = await page.locator('.practice-cue-row').innerText();
   const note = await page.locator('.current-note').innerText();
@@ -114,7 +114,7 @@ test('Pause retains the cue and Resume advances once on a shared controlled cloc
   expect(await page.locator('.current-note').innerText()).toBe(note);
   await page.locator('#resume-button').click();
   await expect(page.locator('.practice-running')).toBeVisible();
-  await page.clock.runFor(249);
+  await page.clock.runFor(60000 / 200 - 1);
   expect(await page.locator('.practice-cue-row').innerText()).toBe(cue);
   await page.clock.runFor(1);
   await expect(page.locator('.beat-meter')).toHaveText('3 / 6');
@@ -171,7 +171,7 @@ test('real Web Audio reaches destination side-tap, accents target, then Stop sil
   });
   await setup(page);
   await page.locator('[data-popover-target="bpm"]').click();
-  await page.locator('#bpm').fill('240');
+  await page.locator('#bpm').fill('200');
   await page.keyboard.press('Tab');
   await page.keyboard.press('Escape');
   await page.locator('#start-button').click();
@@ -248,7 +248,7 @@ test('long progress moves its rail, not the document, on a short landscape viewp
   await page.setViewportSize({ width: 568, height: 320 });
   await setup(page);
   await page.locator('[data-popover-target="bpm"]').click();
-  await page.locator('#bpm').fill('240');
+  await page.locator('#bpm').fill('200');
   await page.keyboard.press('Tab');
   await page.keyboard.press('Escape');
   await page.locator('[data-popover-target="strings"]').click();

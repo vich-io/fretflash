@@ -18,7 +18,7 @@ export function getViewModel(state) {
   const target = group.targets[beatNumber - 1];
   return { ...base,
     prompt: countIn ? 'Get ready' : group.label,
-    preview: countIn ? group.label : state.order[state.noteIndex + 1]?.label ?? 'Done',
+    preview: countIn ? group.label : state.order[state.noteIndex + 1]?.label ?? '',
     countdown: countIn ? Math.max(1, 5 - state.countInBeat) : null,
     beatNumber, beatCount: group.targets.length,
     stringCue: `String ${target.number} · ${target.label}`,

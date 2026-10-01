@@ -40,6 +40,7 @@ function settingsPayload(overrides = {}) {
   return {
     version: 6,
     bpm: DEFAULT_BPM,
+    spokenCues: false,
     selectedLabels: DEFAULT_SELECTED_LABELS,
     fretRange: { from: 0, to: 12 },
     locationMode: 'one-per-string',
@@ -56,7 +57,7 @@ test('settings module exposes current setup constants and validators', () => {
   assert.deepEqual(LOCATION_MODES, ['one-per-string', 'all-in-range']);
   assert.equal(DEFAULT_LOCATION_MODE, 'one-per-string');
   assert.equal(isValidBpm(60), true);
-  assert.equal(isValidBpm(19), false);
+  assert.equal(isValidBpm(9), false);
   assert.equal(isValidFretRange({ from: 3, to: 7 }), true);
   assert.equal(isValidFretRange({ from: 7, to: 3 }), false);
   assert.equal(isValidLocationMode('all-in-range'), true);
@@ -65,7 +66,7 @@ test('settings module exposes current setup constants and validators', () => {
 
 test('settings module parses setup inputs without accepting invalid drafts', () => {
   assert.equal(parseBpmInput(' 72 '), 72);
-  assert.equal(parseBpmInput('19'), null);
+  assert.equal(parseBpmInput('9'), null);
   assert.equal(parseFretBoundInput('24'), 24);
   assert.equal(parseFretBoundInput('25'), null);
   assert.deepEqual(parseTuningInput('D A D G A D'), { id: 'custom', strings: ['D', 'A', 'D', 'G', 'A', 'D'] });
@@ -87,6 +88,7 @@ test('settings module normalizes setup without sharing mutable values', () => {
 
   assert.deepEqual(setup, {
     bpm: 84,
+    spokenCues: false,
     selectedLabels: ['C#', 'Db'],
     fretRange: { from: 5, to: 9 },
     locationMode: 'all-in-range',
@@ -111,6 +113,7 @@ test('settings module restores only current saved payloads and falls back otherw
     locationMode: 'all-in-range',
   }))), {
     bpm: 76,
+    spokenCues: false,
     selectedLabels: ['C'],
     fretRange: { from: 7, to: 12 },
     locationMode: 'all-in-range',

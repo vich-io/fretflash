@@ -10,7 +10,7 @@ test('Resume prepares a genuinely suspended AudioContext and recovers from rejec
   });
   await page.goto('/');
   await page.locator('[data-popover-target="bpm"]').click();
-  await page.locator('#bpm').fill('240');
+  await page.locator('#bpm').fill('200');
   await page.keyboard.press('Enter');
   await page.locator('#start-button').click();
   await expect(page.locator('.practice-countin')).toBeVisible();

@@ -74,11 +74,11 @@ function createControllerHarness() {
 test('createAppController rejects invalid BPM without scheduling a timer', () => {
   const harness = createControllerHarness();
 
-  const started = harness.controller.start('19');
+  const started = harness.controller.start('9');
 
   assert.equal(started, false);
   assert.equal(harness.scheduled, null);
-  assert.equal(harness.renders.at(-1).error, 'Choose a BPM between 20 and 240.');
+  assert.equal(harness.renders.at(-1).error, 'Choose a BPM between 10 and 200.');
   assert.equal(harness.renders.at(-1).state.phase, 'idle');
 });
 
@@ -107,10 +107,10 @@ test('createAppController reports invalid BPM before empty note selection', () =
   const harness = createControllerHarness();
 
   harness.controller.setSelectedLabels([]);
-  const started = harness.controller.start('19');
+  const started = harness.controller.start('9');
 
   assert.equal(started, false);
-  assert.equal(harness.renders.at(-1).error, 'Choose a BPM between 20 and 240.');
+  assert.equal(harness.renders.at(-1).error, 'Choose a BPM between 10 and 200.');
 });
 
 test('createAppController preserves valid BPM when note selection is empty', () => {

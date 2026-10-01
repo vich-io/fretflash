@@ -1,5 +1,4 @@
 import {
-  DEFAULT_SELECTED_LABELS,
   DEFAULT_TUNING,
   NOTE_PRESETS,
   TUNING_PRESETS,
@@ -9,7 +8,6 @@ import {
 import {
   BPM_MAX,
   BPM_MIN,
-  DEFAULT_BPM,
   DEFAULT_FRET_RANGE,
   DEFAULT_LOCATION_MODE,
   FRET_MAX,
@@ -34,6 +32,7 @@ const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 export const PROMPT_DECK_LABELS = NOTE_LETTERS.flatMap(letter => [letter, `${letter}b`, `${letter}#`]);
 
 import { FRET_RANGE_ERROR } from './browser/setup-drafts.js';
+import { getSpokenBpmMax } from './speech.js';
 export { FRET_RANGE_ERROR };
 
 // HTML rendering
@@ -119,15 +118,21 @@ function renderStringControls(tuning = DEFAULT_TUNING, selectedStringIndexes) {
   }).join('');
 }
 
-function getSetupSummary(selectedLabels, fretRange = DEFAULT_FRET_RANGE, bpm = DEFAULT_BPM, locationMode = DEFAULT_LOCATION_MODE, tuning = DEFAULT_TUNING, selectedStringIndexes) {
-  const labels = Array.isArray(selectedLabels) ? selectedLabels : DEFAULT_SELECTED_LABELS;
+function getSetupCoverage({ selectedLabels: labels, fretRange, bpm, locationMode, tuning, selectedStringIndexes }) {
   const range = normalizeFretRange(fretRange);
   const activeTuning = cloneTuning(tuning);
   const strings = createTuningStrings(activeTuning.strings);
   const activeIndexes = normalizeSelectedStringIndexes(selectedStringIndexes, activeTuning.strings.length);
   const groups = createRangeFilteredRound(labels, range, (items) => items, locationMode, strings, activeIndexes);
+  const available = new Set(groups.map(group => group.label));
+  const omitted = labels.filter(label => !available.has(label));
+  const notes = omitted.length ? `${groups.length} of ${labels.length} notes available` : `${groups.length} notes`;
   const clicks = getRoundClickCount(groups);
-  return `${groups.length} notes · ${clicks} clicks · ${formatRoundDuration(clicks, bpm)}`;
+  return {
+    summary: `${notes} · ${clicks} clicks · ${formatRoundDuration(clicks, bpm)}`,
+    omitted,
+    error: labels.length === 0 ? 'Select at least one note.' : groups.length === 0 ? 'No selected notes are available in this fret range.' : '',
+  };
 }
 
 function getTuningLabel(tuning = DEFAULT_TUNING) {
@@ -167,12 +172,13 @@ ${renderDrillCell('targets', 'Targets', getLocationModeLabel(setup.locationMode)
 const BPM_QUICK_PICKS = [30, 40, 50, 60, 70, 80, 100];
 
 function renderBpmControls(setup, draft) {
+  const maximum = setup.bpmMax ?? getSpokenBpmMax(setup);
   const quickPickButtons = BPM_QUICK_PICKS.map((bpm) => {
     const selectedClass = setup.bpm === bpm ? ' class="is-selected"' : '';
-    return `<button${selectedClass} type="button" data-bpm="${bpm}" aria-pressed="${setup.bpm === bpm ? 'true' : 'false'}">${bpm}</button>`;
+    return `<button${selectedClass} type="button" data-bpm="${bpm}" aria-pressed="${setup.bpm === bpm ? 'true' : 'false'}"${bpm > maximum ? ' disabled' : ''}>${bpm}</button>`;
   }).join('');
 
-  return `<div class="bpm-field" aria-label="BPM value"><button class="bpm-stepper-button" type="button" data-bpm-step="-1" aria-label="Decrease BPM">−</button><input id="bpm" name="bpm" type="number" inputmode="numeric" enterkeyhint="done" aria-label="BPM" min="${BPM_MIN}" max="${BPM_MAX}" step="1" value="${escapeAttributeValue(draft ?? setup.bpm)}"><button class="bpm-stepper-button" type="button" data-bpm-step="1" aria-label="Increase BPM">+</button></div><div class="quick-picks" aria-label="BPM quick picks">${quickPickButtons}</div>`;
+  return `<div class="bpm-field" aria-label="BPM value"><button class="bpm-stepper-button" type="button" data-bpm-step="-1" aria-label="Decrease BPM">−</button><input id="bpm" name="bpm" type="number" inputmode="numeric" enterkeyhint="done" aria-label="BPM" min="${BPM_MIN}" max="${maximum}" step="1" value="${escapeAttributeValue(draft ?? setup.bpm)}"><button class="bpm-stepper-button" type="button" data-bpm-step="1" aria-label="Increase BPM">+</button></div><div class="quick-picks" aria-label="BPM quick picks">${quickPickButtons}</div>${maximum < BPM_MAX ? `<p class="microcopy">Spoken cues: maximum ${maximum} BPM for this drill.</p>` : ''}`;
 }
 
 function renderEditor(id, title, body, openPopover) {
@@ -235,7 +241,7 @@ function renderPracticeContext(setup, phase) {
   const tempo = ['paused', 'done'].includes(phase)
     ? `<button type="button" data-popover-target="bpm" aria-expanded="${setup.openPopover === 'bpm'}"${setup.fieldErrors?.bpm ? ' aria-invalid="true"' : ''}>${setup.bpm} BPM <span aria-hidden="true">⌄</span></button>`
     : `<span class="practice-tempo">${setup.bpm} BPM</span>`;
-  return `<section class="practice-context" aria-label="Current drill setup"><div class="context-line">${tempo}<span>Frets ${escapeHtml(getFretRangeLabel(setup.fretRange))}</span></div><details class="context-details"><summary>Setup details</summary><p>Strings ${escapeHtml(getStringSummary(setup.tuning, setup.selectedStringIndexes))}<br>Tuning ${escapeHtml(getTuningLabel(setup.tuning))}<br>Targets ${escapeHtml(getLocationModeLabel(setup.locationMode))} · Shuffled</p></details></section>`;
+  return `<section class="practice-context" aria-label="Current drill setup"><div class="context-line">${tempo}<span>Frets ${escapeHtml(getFretRangeLabel(setup.fretRange))}</span></div><details class="context-details"><summary>Setup details</summary><p>Strings ${escapeHtml(getStringSummary(setup.tuning, setup.selectedStringIndexes))}<br>Tuning ${escapeHtml(getTuningLabel(setup.tuning))}<br>Targets ${escapeHtml(getLocationModeLabel(setup.locationMode))} · Shuffled${setup.spokenCues ? '<br>Spoken cues on · George' : ''}</p></details></section>`;
 }
 
 function renderPracticeStage(content, setup, phase, feedback) {
@@ -262,25 +268,24 @@ export function renderHtml(
   if (setupInput === null || typeof setupInput !== 'object' || Array.isArray(setupInput)) {
     throw new TypeError('renderHtml expects a setup object');
   }
-  const setup = { ...createSetup(setupInput), openPopover: setupInput.openPopover, drafts: setupInput.drafts, fieldErrors: setupInput.fieldErrors };
+  const setup = { ...createSetup(setupInput), bpmMax: setupInput.bpmMax, openPopover: setupInput.openPopover, drafts: setupInput.drafts, fieldErrors: setupInput.fieldErrors };
   const renderFretRange = Object.hasOwn(setupInput, 'renderFretRange') ? setupInput.renderFretRange : setup.fretRange;
-  const {
-    bpm,
-    selectedLabels,
-    fretRange,
-    locationMode,
-    tuning,
-    selectedStringIndexes,
-  } = setup;
+  const { selectedLabels } = setup;
   const openPopover = setupInput?.openPopover ?? '';
   const fretRangeError = setupInput.fieldErrors?.fretRange || (error === FRET_RANGE_ERROR ? error : '');
-  const startDisabled = Boolean(setupInput.startPending || (setupInput.invalidDraft ?? !isValidFretRange(renderFretRange)));
+  const invalidRange = setupInput.invalidDraft ?? !isValidFretRange(renderFretRange);
   const errorHtml = error && error !== FRET_RANGE_ERROR ? `<p class="error" role="alert">${escapeHtml(error)}</p>` : '';
   const hiddenErrors = [['bpm', 'BPM', setupInput.fieldErrors?.bpm], ['fret-range', 'Frets', fretRangeError], ['tuning', 'Tuning', setupInput.fieldErrors?.tuning]].filter(([id,, message]) => message && id !== openPopover);
   const recovery = hiddenErrors.map(([id, label, message]) => `<div class="draft-recovery" role="alert"><p>${escapeHtml(message)}</p><button type="button" data-recover-editor="${id}">Fix ${label}</button></div>`).join('');
   const feedback = `<div id="app-feedback">${recovery}${hiddenErrors.some(([, , message]) => message === error) ? '' : errorHtml}${setupInput.startPending ? '<p role="status">Starting audio…</p><button id="cancel-start-button" type="button">Cancel</button>' : ''}</div>`;
 
   if (view.phase === 'idle') {
+    const coverage = getSetupCoverage(setup);
+    const startDisabled = Boolean(setupInput.startPending || invalidRange || coverage.error);
+    const coverageError = coverage.error && error !== coverage.error && !invalidRange && !Object.values(setupInput.fieldErrors ?? {}).some(Boolean)
+      ? `<p class="error" role="alert">${escapeHtml(coverage.error)}</p>` : '';
+    const omissions = coverage.omitted.length
+      ? `<details class="note-availability"><summary>${coverage.omitted.length} omitted ${coverage.omitted.length === 1 ? 'note' : 'notes'}</summary><p>${coverage.omitted.map(escapeHtml).join(' ')}</p></details>` : '';
     return `<main class="app-shell app-shell-setup">
 <div class="setup-launcher">
 <div class="setup-scroll">
@@ -291,8 +296,9 @@ ${renderDrillHeader(setup, renderFretRange, openPopover, setupInput.fieldErrors)
 ${renderHeaderPopovers(setup, renderFretRange, fretRangeError, openPopover, setupInput.drafts)}
 <p class="visually-hidden">${escapeHtml(view.prompt)}</p>
 ${renderPromptDeck(selectedLabels)}
+<button id="spoken-cues-button" class="spoken-cues-toggle" type="button" aria-pressed="${setup.spokenCues}"><span>Spoken cues</span><span class="spoken-cues-state" aria-hidden="true">${setup.spokenCues ? 'On' : 'Off'}</span></button>
 </div>
-<div class="setup-transport">${feedback}<div class="setup-start-row"><p class="note-pool-summary">${escapeHtml(getSetupSummary(selectedLabels, fretRange, bpm, locationMode, tuning, selectedStringIndexes))} · shuffled</p><footer class="deck-footer"><button id="start-button" class="primary-action" type="button"${startDisabled ? ' disabled aria-disabled="true"' : ''}>${escapeHtml(view.primaryButton ?? 'Start')}</button></footer></div></div>
+<div class="setup-transport">${feedback}${coverageError}<div class="setup-start-row"><p class="note-pool-summary">${escapeHtml(coverage.summary)} · shuffled</p><footer class="deck-footer"><button id="start-button" class="primary-action" type="button"${startDisabled ? ' disabled aria-disabled="true"' : ''}>${escapeHtml(view.primaryButton ?? 'Start')}</button></footer></div>${omissions}</div>
 <div class="setup-tail"><div id="quick-reference-slot"></div>
 ${renderShortcutBar(view.phase)}</div>
 </div>
@@ -317,6 +323,10 @@ ${renderShortcutBar(view.phase)}</div>
   const noteProgress = `<div class="note-progress-rail" aria-label="Note progress">${progressChips}</div>`;
   const controls = `<div class="actions practice-actions">${view.showPause ? '<button id="pause-button" class="secondary-action" type="button">Pause</button>' : ''}${view.showResume ? '<button id="resume-button" class="secondary-action" type="button">Resume</button>' : ''}${view.showRestart ? '<button id="restart-button" class="secondary-action" type="button">Restart</button>' : '<span class="transport-reserve" aria-hidden="true"></span>'}${view.showStop ? '<button id="stop-button" class="danger-action" type="button">Stop</button>' : ''}</div>`;
 
+  const renderNext = (label, caption = 'Next') => label
+    ? `<div class="next-note" aria-label="Next note"><span>${escapeHtml(caption)}</span><strong>${escapeHtml(label)}</strong></div>`
+    : '<div class="next-note is-reserved" aria-hidden="true"><span></span><strong></strong></div>';
+
   if (view.phase === 'done') {
     const sameOrderButton = view.showSameOrder
       ? '<button id="same-order-button" class="secondary-action" type="button">Repeat</button>'
@@ -329,9 +339,9 @@ ${renderShortcutBar(view.phase)}</div>
 
   if (isCountIn) {
     const countInNumber = view.countdown;
-    return renderPracticeStage(`<section class="practice-display ${phaseClass}" aria-live="polite"><p class="visually-hidden">${escapeHtml(`Starting in ${countInNumber}`)}</p>${statusSlot}${renderCueRow()}<div class="current-note" aria-label="Starting note"><span class="hero-label">${escapeHtml(`Starting in ${countInNumber}`)}</span><strong>${escapeHtml(view.preview)}</strong></div><div class="next-note" aria-label="Next note"><span>Next after that</span><strong>${escapeHtml(view.progressLabels?.[1] ?? 'Done')}</strong></div>${noteProgress}${controls}</section>`, setup, view.phase, feedback);
+    return renderPracticeStage(`<section class="practice-display ${phaseClass}" aria-live="polite"><p class="visually-hidden">${escapeHtml(`Starting in ${countInNumber}`)}</p>${statusSlot}${renderCueRow()}<div class="current-note" aria-label="Starting note"><span class="hero-label">${escapeHtml(`Starting in ${countInNumber}`)}</span><strong>${escapeHtml(view.preview)}</strong></div>${renderNext(view.progressLabels?.[1], 'Next after that')}${noteProgress}${controls}</section>`, setup, view.phase, feedback);
   }
 
-  return renderPracticeStage(`<section class="practice-display ${phaseClass}" aria-live="polite">${statusSlot}${renderCueRow()}<div class="current-note" aria-label="Current note"><span class="hero-label" aria-hidden="true"></span><strong>${escapeHtml(view.prompt)}</strong></div><div class="next-note" aria-label="Next note"><span>Next</span><strong>${escapeHtml(view.preview)}</strong></div>${noteProgress}${controls}</section>`, setup, view.phase, feedback);
+  return renderPracticeStage(`<section class="practice-display ${phaseClass}" aria-live="polite">${statusSlot}${renderCueRow()}<div class="current-note" aria-label="Current note"><span class="hero-label" aria-hidden="true"></span><strong>${escapeHtml(view.prompt)}</strong></div>${renderNext(view.preview)}${noteProgress}${controls}</section>`, setup, view.phase, feedback);
 }
 

@@ -5,7 +5,7 @@ async function editor(page, name) { await page.locator(`[data-popover-target="${
 async function tinyRound(page) {
   await page.goto('/');
   await editor(page, 'bpm');
-  await page.locator('#bpm').fill('240');
+  await page.locator('#bpm').fill('200');
   await page.keyboard.press('Enter');
   await page.locator('[data-preset="clear"]').click();
   await page.locator('[data-note-label="C#"]').click();
@@ -55,7 +55,7 @@ test('Clear is usable but cannot start or overwrite the last valid saved pool', 
   const before = await saved(page);
   await page.locator('[data-preset="clear"]').click();
   await expect(page.locator('.note-pill[aria-pressed="true"]')).toHaveCount(0);
-  await page.locator('#start-button').click();
+  await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('[role="alert"]')).toContainText('Select at least one note');
   expect(await saved(page)).toEqual(before);
   await page.locator('[data-note-label="C"]').click();
@@ -90,7 +90,7 @@ test('round journey: distinct spellings, Pause/Restart, Done/Repeat, Shuffle and
   await expect(page.locator('.practice-done')).toBeVisible();
   await expect(page.locator('input:visible')).toHaveCount(0);
   await expect(page.locator('input')).toHaveCount(1);
-  await expect(page.locator('#bpm')).toHaveValue('240');
+  await expect(page.locator('#bpm')).toHaveValue('200');
   await page.locator('#same-order-button').click();
   await expect(page.locator('.practice-countin')).toBeVisible();
   expect(await page.locator('.progress-cell').allTextContents()).toEqual(order);

@@ -6,7 +6,7 @@ import { checkRuntimeGraph } from './runtime-manifest.mjs';
 
 const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const allowed = new Set(await checkRuntimeGraph());
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.txt': 'text/plain', '.png': 'image/png' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.txt': 'text/plain', '.png': 'image/png', '.wav': 'audio/wav' };
 const server = createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);

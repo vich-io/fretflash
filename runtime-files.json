@@ -5,17 +5,24 @@
     "app.js",
     "src/audio.js",
     "src/browser/setup-drafts.js",
+    "src/browser/tempo-gestures.js",
     "src/controller.js",
     "src/music.js",
     "src/render.js",
     "src/round.js",
     "src/settings.js",
+    "src/speech.js",
+    "src/voice-bank.js",
     "src/state.js",
     "src/view-model.js",
     "assets/fonts/inter-latin-variable.woff2",
     "assets/fonts/OFL.txt",
     "assets/icons/fretflash-six-line-f.svg",
     "assets/icons/fretflash-192.png",
-    "assets/share-card.png"
+    "assets/share-card.png",
+
+    "assets/voice/george.wav",
+    "assets/voice/george-fast.wav",
+    "assets/voice/george-tight.wav"
   ]
 }

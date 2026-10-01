@@ -25,7 +25,7 @@ function references(file, source) {
   } else if (extname(file) === '.js') {
     for (const match of source.matchAll(/\b(?:import|export)\s*(?:[\s\S]*?\s+from\s*)?["'](\.[^"']+)["']|\bimport\s*\(\s*["'](\.[^"']+)["']\s*\)/g)) refs.push(match[1] || match[2]);
     // The renderer emits an image URL as HTML rather than a module import.
-    for (const match of source.matchAll(/["'](assets\/(?:fonts|icons)\/[^"'\s<>]+)["']/g)) refs.push('/' + match[1]);
+    for (const match of source.matchAll(/["'](assets\/(?:fonts|icons|voice)\/[^"'\s<>]+)["']/g)) refs.push('/' + match[1]);
   }
   return refs.filter(ref => !/^(?:https?:|data:|#|mailto:)/i.test(ref)).map(ref => {
     const resolved = ref.startsWith('/') ? ref.slice(1) : posix.normalize(posix.join(dirname(file), ref));

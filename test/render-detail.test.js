@@ -104,7 +104,7 @@ test('renderHtml renderFretRange override is display-only and escaped', () => {
 });
 
 test('renderHtml renders the compact setup shell and validation errors', () => {
-  const html = renderHtml(getViewModel(createIdleState()), createSetup({ bpm: 60 }), 'Choose a BPM between 20 and 240.');
+  const html = renderHtml(getViewModel(createIdleState()), createSetup({ bpm: 60 }), 'Choose a BPM between 10 and 200.');
 
   assert.match(html, /class="app-shell app-shell-setup"/);
   assert.match(html, /<div class="setup-launcher">/);
@@ -136,7 +136,7 @@ test('renderHtml renders the compact setup shell and validation errors', () => {
   assert.doesNotMatch(html, /ESC Close/);
   assert.doesNotMatch(html, /Space start\/pause\/resume|P Pause|S Stop|N New/i);
   assert.match(html, /role="alert"/);
-  assert.match(html, /Choose a BPM between 20 and 240\./);
+  assert.match(html, /Choose a BPM between 10 and 200\./);
 
   const errorHtml = renderHtml(getViewModel(createIdleState()), { ...createSetup(createIdleState()), openPopover: 'fret-range', renderFretRange: { from: 14, to: 3 } }, 'Choose frets between 0 and 24, with From no higher than To.');
   assert.match(errorHtml, /<div class="header-popover"[^>]*data-popover="fret-range" data-open="true"/);
@@ -398,12 +398,16 @@ test('renderHtml frames active practice as the same app console without editable
   assert.doesNotMatch(html, /<input /);
 });
 
-test('renderHtml renders Done as the final-note preview', () => {
-  const state = { ...testStartRound(60, PITCHES, orderGroupsByLabels([...PITCHES])), phase: 'running', noteIndex: 11, beatInNote: 4 };
-  const html = renderHtml(getViewModel(state), state);
-
-  assert.match(html, /<div class="current-note" aria-label="Current note"><span class="hero-label" aria-hidden="true"><\/span><strong>B<\/strong><\/div>/);
-  assert.match(html, /<div class="next-note" aria-label="Next note"><span>Next<\/span><strong>Done<\/strong><\/div>/);
+test('final-note and sole-note previews stay empty until the drill is done', () => {
+  const final = { ...testStartRound(60, PITCHES, orderGroupsByLabels([...PITCHES])), phase: 'running', noteIndex: 11, beatInNote: 4 };
+  const sole = testStartRound(60, ['B'], orderGroupsByLabels(['B']));
+  for (const state of [final, { ...final, phase: 'paused', pausedFromPhase: 'running' }, sole, { ...sole, phase: 'paused', pausedFromPhase: 'countin' }]) {
+    const html = renderHtml(getViewModel(state), state);
+    assert.match(html, /<div class="next-note is-reserved" aria-hidden="true"><span><\/span><strong><\/strong><\/div>/);
+    assert.doesNotMatch(html, /<strong>Done\.?<\/strong>|aria-label="Next note"/);
+  }
+  assert.equal(getViewModel(final).preview, '');
+  assert.match(renderHtml(getViewModel(final), final), /aria-label="Current note"[\s\S]*?<strong>B<\/strong>/);
 });
 
 test('renderHtml renders paused as an active drill state with resume and stop controls', () => {

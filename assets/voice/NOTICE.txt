@@ -1,0 +1,17 @@
+Spoken-cue recordings
+
+The George WAV and WebM cue banks were prepared by Alexandros Vichos from
+ElevenLabs Multilingual v2 output generated through his paid account.
+They contain prerecorded note names; the app does not connect to ElevenLabs.
+
+Rights held by Alexandros Vichos in these prepared recordings are licensed
+under the repository's MIT licence. This grant covers the included recordings,
+not the underlying voice model, service or speaker's identity.
+
+ElevenLabs permits commercial use of output generated during a paid subscription.
+Its output terms and Prohibited Use Policy remain applicable. These recordings do not include or license the underlying voice model.
+
+Provider terms:
+https://elevenlabs.io/terms-of-use-eu
+https://elevenlabs.io/use-policy
+https://help.elevenlabs.io/hc/en-us/articles/13313564601361-Can-I-publish-the-content-I-generate-on-the-platform

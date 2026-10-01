@@ -6,8 +6,8 @@ import {
   normalizePitchLabel,
 } from './music.js';
 
-export const BPM_MIN = 20;
-export const BPM_MAX = 240;
+export const BPM_MIN = 10;
+export const BPM_MAX = 200;
 export const DEFAULT_BPM = 40;
 export const SETTINGS_STORAGE_KEY = 'fretflash.settings.v1';
 export const LOCATION_MODES = ['one-per-string', 'all-in-range'];
@@ -147,6 +147,7 @@ export function createSetup(setup = {}) {
   const activeTuning = cloneTuning(source.tuning);
   return {
     bpm: Object.hasOwn(source, 'bpm') ? source.bpm : DEFAULT_BPM,
+    spokenCues: source.spokenCues === true,
     selectedLabels: Array.isArray(source.selectedLabels) ? [...source.selectedLabels] : [...DEFAULT_SELECTED_LABELS],
     fretRange: normalizeFretRange(source.fretRange),
     locationMode: isValidLocationMode(source.locationMode) ? source.locationMode : DEFAULT_LOCATION_MODE,
@@ -162,6 +163,7 @@ function defaultSettings() {
 function parseCurrentSavedSetup(parsed) {
   return {
     bpm: parsed.bpm,
+    spokenCues: parsed.spokenCues ?? false,
     selectedLabels: [...parsed.selectedLabels],
     fretRange: cloneFretRange(parsed.fretRange),
     locationMode: parsed.locationMode,
@@ -193,6 +195,7 @@ export function parseSavedSettings(raw) {
 
     if (
       parsed.version !== 6
+      || (Object.hasOwn(parsed, 'spokenCues') && typeof parsed.spokenCues !== 'boolean')
       || !isValidFretRange(parsed.fretRange)
       || !isValidLocationMode(parsed.locationMode)
       || !isValidSavedTuning(parsed.tuning)
@@ -228,6 +231,7 @@ export function loadSettings(storage) {
 export function saveSettings(storage, state) {
   if (
     !storage
+    || (Object.hasOwn(state, 'spokenCues') && typeof state.spokenCues !== 'boolean')
     || !isValidBpm(state.bpm)
     || !isValidNoteSelection(state.selectedLabels)
     || !isValidFretRange(state.fretRange)
@@ -242,6 +246,7 @@ export function saveSettings(storage, state) {
     storage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
       version: 6,
       bpm: state.bpm,
+      spokenCues: state.spokenCues === true,
       selectedLabels: state.selectedLabels,
       fretRange: cloneFretRange(state.fretRange),
       locationMode: state.locationMode,

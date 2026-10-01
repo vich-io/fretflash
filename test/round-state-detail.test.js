@@ -251,6 +251,7 @@ test('createIdleState returns the idle defaults', () => {
     phase: 'idle',
     startPending: false,
     bpm: DEFAULT_BPM,
+    spokenCues: false,
     order: [],
     selectedLabels: DEFAULT_SELECTED_LABELS,
     fretRange: { from: 0, to: 12 },
@@ -320,9 +321,9 @@ test('startRound validates BPM and creates a count-in state with a shuffled grou
   assert.equal(state.beatInNote, 1);
   assert.equal(state.countInBeat, 1);
 
-  assert.throws(() => testStartRound(19, PITCHES, orderGroupsByLabels(order)), /BPM must be an integer from 20 to 240/);
-  for (const bpm of [null, '72', 72.5, 19, 241]) {
-    assert.throws(() => startRound({ bpm, selectedLabels: PITCHES }, orderGroupsByLabels(order)), /BPM must be an integer from 20 to 240/);
+  assert.throws(() => testStartRound(9, PITCHES, orderGroupsByLabels(order)), /BPM must be an integer from 10 to 200/);
+  for (const bpm of [null, '72', 72.5, 9, 201]) {
+    assert.throws(() => startRound({ bpm, selectedLabels: PITCHES }, orderGroupsByLabels(order)), /BPM must be an integer from 10 to 200/);
   }
 });
 
@@ -529,7 +530,7 @@ test('getViewModel covers idle, count-in, running, and done essentials', () => {
   assert.equal(running.beatCount, 6);
   assert.equal(running.stringCue, 'String 3 · G');
   assert.equal(running.progressIndex, 1);
-  assert.equal(running.preview, 'Done');
+  assert.equal(running.preview, '');
 
   const doneState = testStartRound(60, PITCHES, orderGroupsByLabels([...PITCHES]));
   const done = getViewModel({

@@ -6,9 +6,11 @@ import {
 } from './settings.js';
 import { advanceAfterClick, cloneGeneratedOrder, createIdleState, startPreparedRound } from './state.js';
 import { createRangeFilteredRound, getClickIntervalMs, shuffleSelectedLabels } from './round.js';
+import { getSpokenPlayback, getSpokenBpmMax, spokenCueError, upcomingSpokenLabel } from './speech.js';
 
 export function createAppController({
   render, playClick, prepareAudio = () => {},
+  playSpeech = () => {}, stopSpeech = () => {},
   setIntervalFn = setInterval, clearIntervalFn = clearInterval,
   setTimeoutFn = setTimeout, clearTimeoutFn = clearTimeout,
   audioClock, cancelClick = () => {},
@@ -23,7 +25,8 @@ export function createAppController({
   const renderCurrent = (error = '') => render(state, error);
   const intervalSeconds = () => getClickIntervalMs(state.bpm) / 1000;
 
-  function cancelQueued(reconcile = false) {
+  function cancelQueued(reconcile = false, stopActiveSpeech = true) {
+    if (stopActiveSpeech) stopSpeech();
     const now = audioClock?.();
     let firstUnheard = null;
     for (const cue of queued.splice(0)) {
@@ -40,12 +43,12 @@ export function createAppController({
     if (firstUnheard) nextState = firstUnheard;
   }
 
-  function clearTimer() {
+  function clearTimer(stopActiveSpeech = true) {
     if (timerId !== null) {
       clearIntervalFn(timerId);
       timerId = null;
     }
-    cancelQueued();
+    cancelQueued(false, stopActiveSpeech);
   }
 
   function showAndClick() {
@@ -53,11 +56,12 @@ export function createAppController({
     state = nextState;
     renderCurrent();
     playClick({ accent: state.phase === 'running' && state.beatInNote === 1 });
+    announce(state);
     nextState = advanceAfterClick(state);
     if (nextState.phase === 'done') {
       state = nextState;
       renderCurrent();
-      clearTimer();
+      clearTimer(false);
     }
   }
 
@@ -78,6 +82,7 @@ export function createAppController({
     const cueState = nextState;
     const when = nextAt;
     const handle = playClick({ accent: cueState.phase === 'running' && cueState.beatInNote === 1, when });
+    announce(cueState, when);
     nextState = advanceAfterClick(cueState);
     nextAt += intervalSeconds();
     const cue = { state: cueState, when, handle, timer: null };
@@ -94,7 +99,7 @@ export function createAppController({
       if (nextState.phase === 'done' && queued.length === 0) {
         state = nextState;
         renderCurrent();
-        clearTimer();
+        clearTimer(false);
       }
     }, Math.max(0, (when - audioClock()) * 1000));
   }
@@ -105,7 +110,7 @@ export function createAppController({
       const pump = () => {
         if (sequence !== startSequence || !['countin', 'running'].includes(state.phase)) return;
         const now = audioClock();
-        if (now - nextAt > intervalSeconds() / 2) {
+        if (now - nextAt > intervalSeconds() / 2 || now > nextAt && upcomingSpokenLabel(nextState)) {
           pauseForStall();
           return;
         }
@@ -129,9 +134,19 @@ export function createAppController({
     return true;
   }
 
-  function prepareAndBegin(sequence, begin, retry = state.phase === 'done' ? 'Shuffle' : 'Start') {
+  function announce(cueState, when) {
+    const label = upcomingSpokenLabel(cueState);
+    if (label) {
+      const index = cueState.phase === 'countin' ? 0 : cueState.noteIndex + 1;
+      const playback = getSpokenPlayback(label, cueState.bpm, cueState.order[index].targets.length, index < cueState.order.length - 1);
+      if (!playback) throw new Error('Unsafe spoken cue');
+      playSpeech({ label, when, variant: playback.variant });
+    }
+  }
+
+  function prepareAndBegin(sequence, begin, retry = state.phase === 'done' ? 'Shuffle' : 'Start', spokenOrder = state.order, firstAnnouncement = 0) {
     try {
-      const prepared = prepareAudio();
+      const prepared = prepareAudio({ ...currentSetup(), spokenOrder, firstAnnouncement });
       if (prepared && typeof prepared.then === 'function') {
         state = { ...state, startPending: true };
         renderCurrent();
@@ -154,6 +169,7 @@ export function createAppController({
 
   const currentSetup = (overrides = {}) => createSetup({ ...state, ...overrides });
   const idleFromCurrent = (overrides = {}) => createIdleState(currentSetup(overrides));
+  const firstUnheardAnnouncement = () => nextState?.phase === 'countin' ? 0 : (nextState?.noteIndex ?? state.order.length) + 1;
 
   function updateSetup(overrides = {}) {
     if (state.phase === 'done') {
@@ -193,15 +209,20 @@ export function createAppController({
       createTuningStrings(setup.tuning.strings), setup.selectedStringIndexes,
     );
     if (order.length === 0) return rejectStart('No selected notes are available in this fret range.');
+    const speechError = spokenCueError(setup, order);
+    if (speechError) return rejectStart(speechError);
     startSequence += 1;
     clearTimer();
     state = { ...state, bpm, startPending: false };
     const sequence = startSequence;
-    return prepareAndBegin(sequence, () => beginRound(setup, sequence, order));
+    return prepareAndBegin(sequence, () => beginRound(setup, sequence, order), undefined, order);
   }
 
   return {
     getState: () => state,
+    getBpmMax: () => state.phase === 'paused'
+      ? getSpokenBpmMax(currentSetup(), state.order, firstUnheardAnnouncement())
+      : getSpokenBpmMax(currentSetup()),
     setSetup(setup) {
       if (setup === null || typeof setup !== 'object' || Array.isArray(setup)
         || !isValidBpm(setup.bpm)
@@ -257,11 +278,13 @@ export function createAppController({
         tuning: state.completedTuning ?? state.tuning,
         selectedStringIndexes: state.completedSelectedStringIndexes ?? state.selectedStringIndexes,
       });
+      const speechError = spokenCueError(setup, order);
+      if (speechError) return rejectStart(speechError);
       startSequence += 1;
       clearTimer();
       state = { ...state, bpm, startPending: false };
       const sequence = startSequence;
-      return prepareAndBegin(sequence, () => beginRound(setup, sequence, order), 'Repeat');
+      return prepareAndBegin(sequence, () => beginRound(setup, sequence, order), 'Repeat', order);
     },
     pause() {
       if (state.phase !== 'countin' && state.phase !== 'running') return false;
@@ -279,6 +302,9 @@ export function createAppController({
     },
     resume() {
       if (state.phase !== 'paused' || state.startPending) return false;
+      const firstAnnouncement = firstUnheardAnnouncement();
+      const speechError = spokenCueError(currentSetup(), state.order, firstAnnouncement);
+      if (speechError) return rejectStart(speechError);
       clearTimer();
       const phase = state.pausedFromPhase === 'countin' ? 'countin' : 'running';
       const sequence = ++startSequence;
@@ -288,16 +314,18 @@ export function createAppController({
         scheduleTimer(sequence);
         renderCurrent();
         return true;
-      }, 'Resume');
+      }, 'Resume', state.order, firstAnnouncement);
     },
     restartCurrent() {
       if (state.phase !== 'paused' || state.startPending || !state.order?.length) return false;
       const order = cloneGeneratedOrder(state.order);
       const setup = currentSetup({ bpm: state.bpm });
+      const speechError = spokenCueError(setup, order);
+      if (speechError) return rejectStart(speechError);
       startSequence += 1;
       clearTimer();
       const sequence = startSequence;
-      return prepareAndBegin(sequence, () => beginRound(setup, sequence, order), 'Restart');
+      return prepareAndBegin(sequence, () => beginRound(setup, sequence, order), 'Restart', order);
     },
     stop() {
       startSequence += 1;

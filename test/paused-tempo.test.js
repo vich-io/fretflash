@@ -5,7 +5,7 @@ import { createAppController } from '../src/controller.js';
 test('paused tempo persists into subsequent cues without resetting the order or position', () => {
   let tick, interval;
   const controller=createAppController({render(){},playClick(){},setIntervalFn(fn,ms){tick=fn;interval=ms;return 1;},clearIntervalFn(){}});
-  controller.start('240');
+  controller.start('200');
   while(controller.getState().phase==='countin') tick();
   controller.pause();
   const before=controller.getState();

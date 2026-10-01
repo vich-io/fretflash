@@ -1,11 +1,12 @@
 import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js';
-import { BPM_MIN, BPM_MAX, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js';
+import { BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js';
 import { createIdleState } from './src/state.js';
 import { shuffleSelectedLabels } from './src/round.js';
 import { getViewModel } from './src/view-model.js';
 import { renderHtml } from './src/render.js';
 import { createWebAudioClickPlayer } from './src/audio.js';
 import { createSetupDrafts } from './src/browser/setup-drafts.js';
+import { bindTempoGestures } from './src/browser/tempo-gestures.js';
 import { createAppController } from './src/controller.js';
 
 function browserStorage() {
@@ -59,12 +60,13 @@ export function mountBrowserApp({
   let actionError = '';
   let painting = false;
   let previousPhase = 'idle';
+  let tempoGestures;
   const inputFields = { bpm: 'bpm', 'fret-from': 'from', 'fret-to': 'to', 'custom-tuning': 'tuning' };
 
   function paint(state = controller.getState()) {
     painting = true;
     const html = renderHtml(getViewModel(state), {
-      ...createSetup(state), openPopover, drafts: drafts.values, fieldErrors: drafts.errors,
+      ...createSetup(state), bpmMax: controller.getBpmMax(), openPopover, drafts: drafts.values, fieldErrors: drafts.errors,
       renderFretRange: { from: drafts.values.from, to: drafts.values.to },
       invalidDraft: Boolean(drafts.errors.fretRange), startPending: Boolean(state.startPending),
     }, actionError || drafts.errors.bpm || drafts.errors.tuning || '');
@@ -75,6 +77,7 @@ export function mountBrowserApp({
       for (const button of template.content.querySelectorAll('#start-button, #same-order-button, #restart-button, #resume-button')) button.disabled = true;
     }
     updateChildren(root, template.content);
+    tempoGestures?.reconcile();
     if (previousPhase === 'idle' && state.phase !== 'idle') documentTarget.defaultView?.scrollTo(0, 0);
     previousPhase = state.phase;
     const rail = root.querySelector('.note-progress-rail');
@@ -90,10 +93,12 @@ export function mountBrowserApp({
   function persist() { saveSettings(storage, controller.getState()); }
 
   function commit(transform = setup => setup, resetFields = []) {
-    const { setup } = drafts.read(controller.getState());
+    const state = controller.getState();
+    const maximum = state.phase === 'paused' ? controller.getBpmMax() : undefined;
+    const { setup } = drafts.read(state, maximum);
     const next = transform(setup);
     drafts.reset(next, resetFields);
-    const result = drafts.read(next);
+    const result = drafts.read(next, maximum);
     actionError = '';
     if (controller.getState().phase === 'idle') controller.setSetup(result.setup);
     else controller.setBpm(result.setup.bpm);
@@ -121,8 +126,12 @@ export function mountBrowserApp({
   }
 
   function editBpm(value) {
-    const bpm = Math.max(BPM_MIN, Math.min(BPM_MAX, value));
+    const bpm = Math.max(BPM_MIN, Math.min(controller.getBpmMax(), value));
     commit(setup => ({ ...setup, bpm }), ['bpm']);
+  }
+
+  function stepBpm(delta) {
+    editBpm((parseBpmInput(drafts.values.bpm) ?? controller.getState().bpm) + delta);
   }
 
   function closeEditor() {
@@ -172,7 +181,7 @@ export function mountBrowserApp({
     if (transport[button.id]) { transport[button.id](); return; }
     const data = button.dataset;
     if (data.bpm) { editBpm(Number(data.bpm)); return; }
-    if (data.bpmStep) { editBpm((parseBpmInput(drafts.values.bpm) ?? controller.getState().bpm) + Number(data.bpmStep)); return; }
+    if (data.bpmStep) { stepBpm(Number(data.bpmStep)); return; }
     if (data.fretPreset) {
       commit(setup => ({ ...setup, fretRange: { from: Number(data.fretFrom), to: Number(data.fretTo) } }), ['fretRange']); return;
     }
@@ -182,6 +191,7 @@ export function mountBrowserApp({
       return;
     }
     if (data.locationMode) { commit(setup => ({ ...setup, locationMode: data.locationMode })); return; }
+    if (button.id === 'spoken-cues-button') { commit(setup => ({ ...setup, spokenCues: !setup.spokenCues })); return; }
     if (data.preset) { commit(setup => ({ ...setup, selectedLabels: data.preset === 'clear' ? [] : NOTE_PRESETS[data.preset] })); return; }
     if (data.noteLabel) {
       commit(setup => {
@@ -231,12 +241,14 @@ export function mountBrowserApp({
   }
 
   controller = createAppController({ render, prepareAudio: player.prepare, playClick: player.play,
+    playSpeech: player.speak, stopSpeech: player.stopSpeech,
     createOrder, initialState: createIdleState(initialSettings),
     audioClock: player.now, cancelClick: player.cancel,
   });
   documentElement.classList.toggle('touch-first', Boolean(matchMediaFn?.('(hover: none) and (pointer: coarse)')?.matches || navigatorLike?.userAgentData?.mobile));
   documentElement.classList.remove('keyboard-seen');
   root.addEventListener('click', handleClick);
+  tempoGestures = bindTempoGestures(root, stepBpm);
   root.addEventListener('input', event => {
     const field = inputFields[event.target.id];
     if (!field) return;
@@ -246,7 +258,7 @@ export function mountBrowserApp({
       if (controller.getState().phase === 'idle') controller.stop();
       else controller.setBpm(controller.getState().bpm);
     }
-    drafts.read(controller.getState());
+    drafts.read(controller.getState(), controller.getState().phase === 'paused' ? controller.getBpmMax() : undefined);
     paint();
   });
   root.addEventListener('focusout', event => {
@@ -257,18 +269,20 @@ export function mountBrowserApp({
   root.addEventListener('wheel', event => {
     if (event.target.id !== 'bpm' || event.deltaY === 0) return;
     event.preventDefault();
-    editBpm((parseBpmInput(drafts.values.bpm) ?? controller.getState().bpm) + (event.deltaY < 0 ? 1 : -1));
+    stepBpm(event.deltaY < 0 ? 1 : -1);
   }, { passive: false });
   documentTarget.addEventListener('keydown', handleKey);
   documentTarget.addEventListener('click', event => {
     if (event.composedPath().includes(root) && event.target.closest('button, .header-popover')) return;
     if (openPopover) { openPopover = ''; paint(); }
   });
+  const pauseHidden = () => {
+    if (controller.getState().startPending) stop(); else if (!controller.pause()) player.stopSpeech();
+  };
   documentTarget.addEventListener('visibilitychange', () => {
-    if (documentTarget.hidden) {
-      if (controller.getState().startPending) stop(); else controller.pause();
-    }
+    if (documentTarget.hidden) pauseHidden();
   });
+  documentTarget.defaultView?.addEventListener('pagehide', pauseHidden);
   // Restore setup and enable controls only after all event handlers are installed.
   paint();
   return controller;

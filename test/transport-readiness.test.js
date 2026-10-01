@@ -14,7 +14,7 @@ test('Stop cancels pending Resume and duplicate Resume cannot own another reques
     setIntervalFn: () => { timers++; return timers; },
     clearIntervalFn() {},
   });
-  controller.start('240');
+  controller.start('200');
   controller.pause();
   waitForAudio = true;
   const resumed = controller.resume();

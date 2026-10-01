@@ -1,7 +1,8 @@
 import {
-  BPM_MIN, BPM_MAX, FRET_MIN, FRET_MAX, createSetup,
+  BPM_MIN, FRET_MIN, FRET_MAX, createSetup,
   parseBpmInput, parseFretBoundInput, parseTuningInput, isValidFretRange,
 } from '../settings.js';
+import { getSpokenBpmMax } from '../speech.js';
 
 export const FRET_RANGE_ERROR = `Choose frets between ${FRET_MIN} and ${FRET_MAX}, with From no higher than To.`;
 
@@ -18,11 +19,9 @@ export function createSetupDrafts(initialSetup) {
     if (fields.includes('tuning')) values.tuning = setup.tuning.strings.join(' ');
     fields.forEach(field => { errors[field] = ''; });
   }
-  function read(currentSetup) {
+  function read(currentSetup, bpmMax) {
     const setup = createSetup(currentSetup);
     const bpm = parseBpmInput(values.bpm);
-    errors.bpm = bpm === null ? `Choose a BPM between ${BPM_MIN} and ${BPM_MAX}.` : '';
-    if (bpm !== null) setup.bpm = bpm;
     const range = { from: parseFretBoundInput(values.from), to: parseFretBoundInput(values.to) };
     errors.fretRange = isValidFretRange(range) ? '' : FRET_RANGE_ERROR;
     if (!errors.fretRange) setup.fretRange = range;
@@ -32,6 +31,9 @@ export function createSetupDrafts(initialSetup) {
       setup.tuning = tuning;
       setup.selectedStringIndexes = tuning.strings.map((_, index) => index);
     }
+    const maximum = bpmMax ?? getSpokenBpmMax(setup);
+    errors.bpm = bpm === null || bpm > maximum ? `Choose a BPM between ${BPM_MIN} and ${maximum}.` : '';
+    if (!errors.bpm) setup.bpm = bpm;
     return { setup, valid: !Object.values(errors).some(Boolean) };
   }
   reset(createSetup(initialSetup));
