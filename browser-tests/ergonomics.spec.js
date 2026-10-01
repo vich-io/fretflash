@@ -48,7 +48,7 @@ test('hidden invalid fret drafts have a visible recovery action', async ({ page 
   await expect(page.locator('.draft-recovery')).toHaveCount(0);
 });
 
-test('keyboard opens editor directly and Done returns focus', async ({ page }) => {
+test('keyboard opens editor directly and Close returns focus', async ({ page }) => {
   await open(page); const trigger=page.locator('[data-popover-target="bpm"]');
   await trigger.focus(); await page.keyboard.press('Enter'); await expect(page.locator('#bpm')).toBeFocused();
   await page.locator('[data-close-editor]:visible').click(); await expect(trigger).toBeFocused();

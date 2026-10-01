@@ -1,4 +1,4 @@
-import { createTuningStrings } from './music.js?v=043bbc19dc51c1fe';
+import { createTuningStrings } from './music.js?v=8f147a0a6df7dadd';
 
 import {
   BPM_MAX,
@@ -7,12 +7,12 @@ import {
   cloneTuning,
   createSetup,
   isValidBpm,
-} from './settings.js?v=043bbc19dc51c1fe';
+} from './settings.js?v=8f147a0a6df7dadd';
 
 import {
   createRangeFilteredRound,
   shuffleSelectedLabels,
-} from './round.js?v=043bbc19dc51c1fe';
+} from './round.js?v=8f147a0a6df7dadd';
 
 export function createIdleState(
   setupInput = {},
@@ -25,6 +25,7 @@ export function createIdleState(
   return {
     phase: 'idle',
     startPending: false,
+    spokenPending: false,
     bpm: setup.bpm,
     spokenCues: setup.spokenCues,
     order: [],
@@ -77,6 +78,7 @@ export function startPreparedRound(setupInput, preparedOrder) {
   return {
     phase: 'countin',
     startPending: false,
+    spokenPending: false,
     bpm: setup.bpm,
     spokenCues: setup.spokenCues,
     order: cloneGeneratedOrder(preparedOrder),

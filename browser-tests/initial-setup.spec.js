@@ -16,7 +16,7 @@ async function holdEntry(page) {
 }
 
 async function expectInitialSetup(page) {
-  await expect(page.locator('.drill-cell')).toHaveCount(5);
+  await expect(page.locator('.drill-cell')).toHaveCount(6);
   await expect(page.locator('.note-pill')).toHaveCount(21);
   await expect(page.locator('#start-button')).toBeVisible();
   await expect(page.locator('#start-button')).toBeDisabled();

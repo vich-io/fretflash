@@ -198,7 +198,8 @@ test('renderHtml renders setup popovers for header cells', () => {
   assert.match(html, /<input id="bpm" name="bpm" type="number"[^>]*aria-label="BPM"[^>]*value="40">/);
   assert.match(html, /data-bpm-step="-1" aria-label="Decrease BPM">−<\/button>/);
   assert.match(html, /data-bpm-step="1" aria-label="Increase BPM">\+<\/button>/);
-  assert.match(html, /data-close-editor>Done<\/button>/);
+  assert.deepEqual([...html.matchAll(/data-close-editor aria-label="([^"]+)"/g)].map(match => match[1]), ['Close BPM', 'Close Fret range', 'Close Strings', 'Close Tuning', 'Close Targets']);
+  assert.doesNotMatch(html, />Done<\/button>/);
   assert.doesNotMatch(html, /<label for="bpm">BPM<\/label>/);
   assert.deepEqual([...html.matchAll(/data-bpm="(\d+)"/g)].map((match) => match[1]), ['30', '40', '60', '80', '120', '160']);
   assert.match(html, /<button class="is-selected" type="button" data-bpm="40" aria-pressed="true">40<\/button>/);
@@ -390,8 +391,8 @@ test('renderHtml frames active practice as the same app console without editable
   assert.match(html, /<div class="setup-app-bar practice-app-bar">/);
   assert.match(html, /<p class="shortcut-hint"><span class="shortcut-plain">SPACE Pause · ESC Exit<\/span>/);
   assert.match(html, /<section class="practice-context" aria-label="Current drill setup">/);
-  assert.match(html, /class="practice-tempo">72 BPM<\/span>/);
-  assert.match(html, /<span>Frets 5–12<\/span>/);
+  assert.match(html, /class="drill-cell practice-tempo"><span class="drill-cell-label">BPM<\/span><strong>72<\/strong>/);
+  assert.match(html, /<span class="drill-cell-label">Frets<\/span><strong>5–12<\/strong>/);
   assert.match(html, /<details class="context-details"><summary>Setup details<\/summary>/);
   assert.match(html, /Strings .*<br>Tuning .*<br>Targets All in range · Shuffled/);
   assert.match(html, /<section class="practice-display practice-running"/);

@@ -32,7 +32,7 @@ test('speech preference survives every phase without redundant voice state', () 
   assert.equal(state.phase, 'done'); assert.equal(createIdleState(state).spokenCues, true);
 });
 
-test('the optional speech toggle has no voice chooser and practice uses George', () => {
+test('the same optional speech toggle is present in setup and practice without a voice chooser', () => {
   const idle = createIdleState(); const off = renderHtml(getViewModel(idle), idle);
   assert.match(off, /id="spoken-cues-button"[^>]*aria-pressed="false"/); assert.doesNotMatch(off, /data-spoken-voice=/);
   const setup = createSetup({ spokenCues: true });
@@ -41,7 +41,8 @@ test('the optional speech toggle has no voice chooser and practice uses George',
   assert.doesNotMatch(on, /data-spoken-voice=|spoken-voice-choice|Lucy/);
   const active = startPreparedRound(setup, [group('C', 1)]);
   const running = renderHtml(getViewModel(active), active);
-  assert.doesNotMatch(running, /data-spoken-voice=|id="spoken-cues-button"/); assert.match(running, /Spoken cues on · George/);
+  assert.doesNotMatch(running, /data-spoken-voice=|Spoken cues on · George/);
+  assert.match(running, /id="spoken-cues-button"[^>]*aria-pressed="true"/);
 });
 
 test('all written spellings have natural George clips without multi-voice or fitted-word APIs', () => {

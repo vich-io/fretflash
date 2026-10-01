@@ -39,9 +39,9 @@ test.describe('initial HTML', () => {
     await help.locator(':scope > summary').click();
     await expect(help.locator('p').first()).toBeVisible();
     await expect(help).toContainText('four count-in clicks');
-    await expect(help).toContainText('0 means open string');
+    await expect(help).toContainText('Fret 0 is the open string');
     await expect(help).toContainText('C# and Db');
-    await expect(help).toContainText('lowest fret first');
+    await expect(help).toContainText('every matching fret, lowest first');
     await expect(page.locator('#start-button')).toBeDisabled();
   });
 });

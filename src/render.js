@@ -3,7 +3,7 @@ import {
   NOTE_PRESETS,
   TUNING_PRESETS,
   createTuningStrings,
-} from './music.js?v=043bbc19dc51c1fe';
+} from './music.js?v=8f147a0a6df7dadd';
 
 import {
   BPM_MAX,
@@ -20,20 +20,20 @@ import {
   normalizeFretRange,
   normalizeSelectedStringIndexes,
   parseFretBoundInput,
-} from './settings.js?v=043bbc19dc51c1fe';
+} from './settings.js?v=8f147a0a6df7dadd';
 
 import {
   createRangeFilteredRound,
   formatRoundDuration,
   getFretRangeLabel,
   getRoundClickCount,
-} from './round.js?v=043bbc19dc51c1fe';
+} from './round.js?v=8f147a0a6df7dadd';
 
 const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 export const PROMPT_DECK_LABELS = NOTE_LETTERS.flatMap(letter => [letter, `${letter}b`, `${letter}#`]);
 
-import { FRET_RANGE_ERROR } from './browser/setup-drafts.js?v=043bbc19dc51c1fe';
-import { getSpokenBpmMax } from './speech.js?v=043bbc19dc51c1fe';
+import { FRET_RANGE_ERROR } from './browser/setup-drafts.js?v=8f147a0a6df7dadd';
+import { getSpokenBpmMax } from './speech.js?v=8f147a0a6df7dadd';
 export { FRET_RANGE_ERROR };
 
 // HTML rendering
@@ -155,7 +155,7 @@ function getLocationModeLabel(locationMode = DEFAULT_LOCATION_MODE) {
 }
 
 function renderBrand() {
-  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=043bbc19dc51c1fe" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
+  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=8f147a0a6df7dadd" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
 }
 
 function renderDrillCell(id, label, value, openPopover, error = '') {
@@ -170,6 +170,7 @@ ${renderDrillCell('fret-range', 'Frets', getFretRangeLabel(isValidFretRange(rend
 ${renderDrillCell('strings', 'Strings', getStringSummary(setup.tuning, setup.selectedStringIndexes), openPopover)}
 ${renderDrillCell('tuning', 'Tuning', getTuningLabel(setup.tuning), openPopover, errors.tuning)}
 ${renderDrillCell('targets', 'Targets', getLocationModeLabel(setup.locationMode), openPopover)}
+${renderSpokenCues(setup)}
 </section>`;
 }
 
@@ -186,7 +187,7 @@ function renderBpmControls(setup, draft) {
 }
 
 function renderEditor(id, title, body, openPopover) {
-  return `<div class="header-popover" role="dialog" aria-label="${escapeAttributeValue(title)}" data-popover="${escapeAttributeValue(id)}"${openPopover === id ? ' data-open="true"' : ''}><div class="editor-heading"><h2>${escapeHtml(title)}</h2><button type="button" data-close-editor>Done</button></div>${body}</div>`;
+  return `<div class="header-popover" role="dialog" aria-label="${escapeAttributeValue(title)}" data-popover="${escapeAttributeValue(id)}"${openPopover === id ? ' data-open="true"' : ''}><div class="editor-heading"><h2>${escapeHtml(title)}</h2><button type="button" data-close-editor aria-label="Close ${escapeAttributeValue(title)}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>${body}</div>`;
 }
 
 function renderHeaderPopovers(setup, renderFretRange, fretRangeError = '', openPopover = '', drafts = {}) {
@@ -242,10 +243,15 @@ function renderShortcutBar(phase) {
 }
 
 function renderPracticeContext(setup, phase) {
+  const tempoLabel = `<span class="drill-cell-label">BPM</span><strong>${setup.bpm}</strong>`;
   const tempo = ['paused', 'done'].includes(phase)
-    ? `<button type="button" data-popover-target="bpm" aria-expanded="${setup.openPopover === 'bpm'}"${setup.fieldErrors?.bpm ? ' aria-invalid="true"' : ''}>${setup.bpm} BPM <span aria-hidden="true">⌄</span></button>`
-    : `<span class="practice-tempo">${setup.bpm} BPM</span>`;
-  return `<section class="practice-context" aria-label="Current drill setup"><div class="context-line">${tempo}<span>Frets ${escapeHtml(getFretRangeLabel(setup.fretRange))}</span></div><details class="context-details"><summary>Setup details</summary><p>Strings ${escapeHtml(getStringSummary(setup.tuning, setup.selectedStringIndexes))}<br>Tuning ${escapeHtml(getTuningLabel(setup.tuning))}<br>Targets ${escapeHtml(getLocationModeLabel(setup.locationMode))} · Shuffled${setup.spokenCues ? '<br>Spoken cues on · George' : ''}</p></details></section>`;
+    ? `<button class="drill-cell" type="button" data-popover-target="bpm" aria-expanded="${setup.openPopover === 'bpm'}"${setup.fieldErrors?.bpm ? ' aria-invalid="true"' : ''}>${tempoLabel}<span class="drill-cell-chevron" aria-hidden="true">⌄</span></button>`
+    : `<div class="drill-cell practice-tempo">${tempoLabel}</div>`;
+  return `<section class="practice-context" aria-label="Current drill setup"><div class="context-line">${tempo}<div class="drill-cell"><span class="drill-cell-label">Frets</span><strong>${escapeHtml(getFretRangeLabel(setup.fretRange))}</strong></div>${renderSpokenCues(setup)}</div><details class="context-details"><summary>Setup details</summary><p>Strings ${escapeHtml(getStringSummary(setup.tuning, setup.selectedStringIndexes))}<br>Tuning ${escapeHtml(getTuningLabel(setup.tuning))}<br>Targets ${escapeHtml(getLocationModeLabel(setup.locationMode))} · Shuffled</p></details></section>`;
+}
+
+function renderSpokenCues(setup) {
+  return `<button id="spoken-cues-button" class="drill-cell spoken-cues-toggle" type="button" aria-pressed="${setup.spokenCues}" aria-busy="${Boolean(setup.spokenPending)}"><span class="drill-cell-label">Spoken cues</span><strong class="spoken-cues-state" aria-hidden="true">${setup.spokenPending ? 'Loading…' : setup.spokenCues ? 'On' : 'Off'}</strong></button>`;
 }
 
 function renderPracticeStage(content, setup, phase, feedback) {
@@ -272,7 +278,7 @@ export function renderHtml(
   if (setupInput === null || typeof setupInput !== 'object' || Array.isArray(setupInput)) {
     throw new TypeError('renderHtml expects a setup object');
   }
-  const setup = { ...createSetup(setupInput), bpmMax: setupInput.bpmMax, openPopover: setupInput.openPopover, drafts: setupInput.drafts, fieldErrors: setupInput.fieldErrors };
+  const setup = { ...createSetup(setupInput), bpmMax: setupInput.bpmMax, openPopover: setupInput.openPopover, drafts: setupInput.drafts, fieldErrors: setupInput.fieldErrors, spokenPending: setupInput.spokenPending };
   const renderFretRange = Object.hasOwn(setupInput, 'renderFretRange') ? setupInput.renderFretRange : setup.fretRange;
   const { selectedLabels } = setup;
   const openPopover = setupInput?.openPopover ?? '';
@@ -300,7 +306,6 @@ ${renderDrillHeader(setup, renderFretRange, openPopover, setupInput.fieldErrors)
 ${renderHeaderPopovers(setup, renderFretRange, fretRangeError, openPopover, setupInput.drafts)}
 <p class="visually-hidden">${escapeHtml(view.prompt)}</p>
 ${renderPromptDeck(selectedLabels)}
-<button id="spoken-cues-button" class="spoken-cues-toggle" type="button" aria-pressed="${setup.spokenCues}"><span>Spoken cues</span><span class="spoken-cues-state" aria-hidden="true">${setup.spokenCues ? 'On' : 'Off'}</span></button>
 </div>
 <div class="setup-transport">${feedback}${coverageError}<div class="setup-start-row"><p class="note-pool-summary">${escapeHtml(coverage.summary)} · shuffled</p><footer class="deck-footer"><button id="start-button" class="primary-action" type="button"${startDisabled ? ' disabled aria-disabled="true"' : ''}>${escapeHtml(view.primaryButton ?? 'Start')}</button></footer></div>${omissions}</div>
 <div class="setup-tail"><div id="quick-reference-slot"></div>

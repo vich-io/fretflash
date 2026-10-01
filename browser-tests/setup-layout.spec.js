@@ -71,8 +71,6 @@ test('native touch and keyboard scrolling reveal notes without moving Start',asy
   await page.reload();await expect(page.locator('#start-button')).toBeEnabled();let reached=false;
   for(let i=0;i<45;i++){await page.keyboard.press('Tab');if(await page.locator('[data-note-label="B#"]').evaluate(e=>e===document.activeElement)){reached=true;break;}}
   expect(reached).toBe(true);expect(await page.locator('#start-button').boundingBox()).toEqual(before);
-  await page.keyboard.press('Tab');await expect(page.locator('#spoken-cues-button')).toBeFocused();
-  expect(await page.locator('#start-button').boundingBox()).toEqual(before);
   await page.keyboard.press('Tab');await expect(page.locator('#start-button')).toBeFocused();await context.close();
 });
 

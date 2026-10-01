@@ -62,13 +62,15 @@ for (const [width,height,scale] of [[320,568,1],[320,568,2],[768,1024,1],[1440,9
   });
 }
 
-test('visible and initial help describes George and bounded faster calls without the retired chooser',async ({ page }) => {
+test('visible and initial help explains when to use spoken cues, not voice implementation',async ({ page }) => {
   await open(page);
   const help=page.locator('#quick-reference'); await help.locator(':scope > summary').click();
   await help.locator('details > summary').click();
-  const text=await help.locator('details p').first().innerText();
-  expect(text).toContain('George'); expect(text).toContain('natural'); expect(text).toContain('faster versions');
-  expect(text).toContain('stronger compression'); expect(text).toContain('10–200 BPM'); expect(text).not.toContain('lower BPM');
-  expect(text).not.toContain('Lucy'); expect(text).not.toContain('Choose');
-  const html=await (await page.request.get('/')).text(); expect(html).not.toContain('Choose Lucy or George');
+  const text=await help.innerText();
+  expect(text).toContain('hear the next note one click before you play it');
+  expect(text).toContain('Switch on or off during a drill');
+  expect(text).not.toMatch(/George|Lucy|compress|faster versions/);
+  const html=await (await page.request.get('/')).text();
+  expect(html).toContain('hear the next note one click before you play it');
+  expect(html).not.toMatch(/George|Lucy|stronger compression/);
 });

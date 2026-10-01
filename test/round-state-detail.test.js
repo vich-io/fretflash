@@ -250,6 +250,7 @@ test('createIdleState returns the idle defaults', () => {
   assert.deepEqual(createIdleState(), {
     phase: 'idle',
     startPending: false,
+    spokenPending: false,
     bpm: DEFAULT_BPM,
     spokenCues: false,
     order: [],

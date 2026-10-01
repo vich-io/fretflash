@@ -1,12 +1,12 @@
-import { createTuningStrings } from './music.js?v=043bbc19dc51c1fe';
+import { createTuningStrings } from './music.js?v=8f147a0a6df7dadd';
 import {
   BPM_MAX, BPM_MIN, cloneFretRange, cloneTuning, createSetup, isValidBpm,
   isValidFretRange, isValidLocationMode, isValidNoteSelection,
   normalizeSelectedStringIndexes, parseBpmInput,
-} from './settings.js?v=043bbc19dc51c1fe';
-import { advanceAfterClick, cloneGeneratedOrder, createIdleState, startPreparedRound } from './state.js?v=043bbc19dc51c1fe';
-import { createRangeFilteredRound, getClickIntervalMs, shuffleSelectedLabels } from './round.js?v=043bbc19dc51c1fe';
-import { getSpokenPlayback, getSpokenBpmMax, spokenCueError, upcomingSpokenLabel } from './speech.js?v=043bbc19dc51c1fe';
+} from './settings.js?v=8f147a0a6df7dadd';
+import { advanceAfterClick, cloneGeneratedOrder, createIdleState, startPreparedRound } from './state.js?v=8f147a0a6df7dadd';
+import { createRangeFilteredRound, getClickIntervalMs, shuffleSelectedLabels } from './round.js?v=8f147a0a6df7dadd';
+import { getSpokenPlayback, getSpokenBpmMax, spokenCueError, upcomingSpokenLabel } from './speech.js?v=8f147a0a6df7dadd';
 
 export function createAppController({
   render, playClick, prepareAudio = () => {},
@@ -21,11 +21,22 @@ export function createAppController({
   let timerId = null;
   let nextAt = null;
   let startSequence = 0;
+  let speechSequence = 0;
+  let speechError = '';
   const queued = [];
-  const renderCurrent = (error = '') => render(state, error);
+  const renderCurrent = (error = '') => render(state, error || speechError);
   const intervalSeconds = () => getClickIntervalMs(state.bpm) / 1000;
 
+  function updateSpeech(changes) {
+    state = { ...state, ...changes };
+    if (nextState) nextState = { ...nextState, ...changes };
+    for (const cue of queued) cue.state = { ...cue.state, ...changes };
+  }
+
   function cancelQueued(reconcile = false, stopActiveSpeech = true) {
+    speechSequence += 1;
+    updateSpeech({ spokenPending: false });
+    if (stopActiveSpeech) speechError = '';
     if (stopActiveSpeech) stopSpeech();
     const now = audioClock?.();
     let firstUnheard = null;
@@ -60,8 +71,8 @@ export function createAppController({
     nextState = advanceAfterClick(state);
     if (nextState.phase === 'done') {
       state = nextState;
-      renderCurrent();
       clearTimer(false);
+      renderCurrent();
     }
   }
 
@@ -94,12 +105,12 @@ export function createAppController({
         return;
       }
       queued.splice(queued.indexOf(cue), 1);
-      state = cueState;
+      state = cue.state;
       renderCurrent();
       if (nextState.phase === 'done' && queued.length === 0) {
         state = nextState;
-        renderCurrent();
         clearTimer(false);
+        renderCurrent();
       }
     }, Math.max(0, (when - audioClock()) * 1000));
   }
@@ -110,7 +121,7 @@ export function createAppController({
       const pump = () => {
         if (sequence !== startSequence || !['countin', 'running'].includes(state.phase)) return;
         const now = audioClock();
-        if (now - nextAt > intervalSeconds() / 2 || now > nextAt && upcomingSpokenLabel(nextState)) {
+        if (now - nextAt > intervalSeconds() / 2 || now > nextAt && !nextState.spokenPending && upcomingSpokenLabel(nextState)) {
           pauseForStall();
           return;
         }
@@ -135,6 +146,7 @@ export function createAppController({
   }
 
   function announce(cueState, when) {
+    if (cueState.spokenPending) return;
     const label = upcomingSpokenLabel(cueState);
     if (label) {
       const index = cueState.phase === 'countin' ? 0 : cueState.noteIndex + 1;
@@ -223,6 +235,42 @@ export function createAppController({
     getBpmMax: () => state.phase === 'paused'
       ? getSpokenBpmMax(currentSetup(), state.order, firstUnheardAnnouncement())
       : getSpokenBpmMax(currentSetup()),
+    setSpokenCues(enabled) {
+      if (typeof enabled !== 'boolean') return false;
+      if (state.startPending) {
+        startSequence += 1;
+        clearTimer();
+        state = { ...state, startPending: false };
+      }
+      const request = ++speechSequence;
+      const sequence = startSequence;
+      speechError = '';
+      const active = ['countin', 'running'].includes(state.phase);
+      updateSpeech({ spokenCues: enabled, spokenPending: enabled && active });
+      if (!enabled) stopSpeech();
+      renderCurrent();
+      if (!enabled || !active) return true;
+
+      const current = () => request === speechSequence && sequence === startSequence;
+      const ready = () => {
+        if (!current()) return false;
+        // Already-queued click onsets stay untouched; only later announcements speak.
+        updateSpeech({ spokenPending: false });
+        renderCurrent();
+        return true;
+      };
+      const failed = () => {
+        if (!current()) return false;
+        updateSpeech({ spokenCues: false, spokenPending: false });
+        speechError = 'Spoken cues could not load. Turn them on to try again.';
+        renderCurrent();
+        return false;
+      };
+      try {
+        const prepared = prepareAudio({ ...currentSetup(), spokenOrder: state.order, firstAnnouncement: firstUnheardAnnouncement() });
+        return prepared && typeof prepared.then === 'function' ? prepared.then(ready, failed) : ready();
+      } catch { return failed(); }
+    },
     setSetup(setup) {
       if (setup === null || typeof setup !== 'object' || Array.isArray(setup)
         || !isValidBpm(setup.bpm)

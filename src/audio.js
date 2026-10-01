@@ -1,4 +1,4 @@
-import { getSpokenClip, getSpokenPlayback, SPOKEN_BANKS } from './speech.js?v=043bbc19dc51c1fe';
+import { getSpokenClip, getSpokenPlayback, SPOKEN_BANKS } from './speech.js?v=8f147a0a6df7dadd';
 
 export function createWebAudioClickPlayer(AudioContextCtor, { fetchFn = globalThis.fetch } = {}) {
   let audioContext = null;

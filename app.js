@@ -1,15 +1,15 @@
-import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js?v=043bbc19dc51c1fe';
+import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js?v=8f147a0a6df7dadd';
 import { FRET_MIN, FRET_MAX, isValidFretRange, parseFretBoundInput,
- BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js?v=043bbc19dc51c1fe';
-import { createIdleState } from './src/state.js?v=043bbc19dc51c1fe';
-import { shuffleSelectedLabels } from './src/round.js?v=043bbc19dc51c1fe';
-import { getViewModel } from './src/view-model.js?v=043bbc19dc51c1fe';
-import { renderHtml } from './src/render.js?v=043bbc19dc51c1fe';
-import { createWebAudioClickPlayer } from './src/audio.js?v=043bbc19dc51c1fe';
-import { createSetupDrafts } from './src/browser/setup-drafts.js?v=043bbc19dc51c1fe';
-import { bindNumericGestures } from './src/browser/numeric-gestures.js?v=043bbc19dc51c1fe';
-import { createAppController } from './src/controller.js?v=043bbc19dc51c1fe';
-import { setupPwa } from './src/browser/pwa.js?v=043bbc19dc51c1fe';
+ BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js?v=8f147a0a6df7dadd';
+import { createIdleState } from './src/state.js?v=8f147a0a6df7dadd';
+import { shuffleSelectedLabels } from './src/round.js?v=8f147a0a6df7dadd';
+import { getViewModel } from './src/view-model.js?v=8f147a0a6df7dadd';
+import { renderHtml } from './src/render.js?v=8f147a0a6df7dadd';
+import { createWebAudioClickPlayer } from './src/audio.js?v=8f147a0a6df7dadd';
+import { createSetupDrafts } from './src/browser/setup-drafts.js?v=8f147a0a6df7dadd';
+import { bindNumericGestures } from './src/browser/numeric-gestures.js?v=8f147a0a6df7dadd';
+import { createAppController } from './src/controller.js?v=8f147a0a6df7dadd';
+import { setupPwa } from './src/browser/pwa.js?v=8f147a0a6df7dadd';
 
 function browserStorage() {
   try { return globalThis.localStorage; } catch { return undefined; }
@@ -71,7 +71,7 @@ export function mountBrowserApp({
     const html = renderHtml(getViewModel(state), {
       ...createSetup(state), bpmMax: controller.getBpmMax(), openPopover, drafts: drafts.values, fieldErrors: drafts.errors,
       renderFretRange: { from: drafts.values.from, to: drafts.values.to },
-      invalidDraft: Boolean(drafts.errors.fretRange), startPending: Boolean(state.startPending),
+      invalidDraft: Boolean(drafts.errors.fretRange), startPending: Boolean(state.startPending), spokenPending: Boolean(state.spokenPending),
     }, actionError || drafts.errors.bpm || drafts.errors.tuning || '');
     const template = documentTarget.createElement('template');
     template.innerHTML = html;
@@ -205,7 +205,15 @@ export function mountBrowserApp({
       return;
     }
     if (data.locationMode) { commit(setup => ({ ...setup, locationMode: data.locationMode })); return; }
-    if (button.id === 'spoken-cues-button') { commit(setup => ({ ...setup, spokenCues: !setup.spokenCues })); return; }
+    if (button.id === 'spoken-cues-button') {
+      if (controller.getState().phase === 'idle') commit(setup => ({ ...setup, spokenCues: !setup.spokenCues }));
+      else {
+        const changed = controller.setSpokenCues(!controller.getState().spokenCues);
+        persist();
+        Promise.resolve(changed).then(persist);
+      }
+      return;
+    }
     if (data.preset) { commit(setup => ({ ...setup, selectedLabels: data.preset === 'clear' ? [] : NOTE_PRESETS[data.preset] })); return; }
     if (data.noteLabel) {
       commit(setup => {

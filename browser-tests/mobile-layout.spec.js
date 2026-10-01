@@ -18,7 +18,7 @@ test('default phone setup exposes Start without scrolling and keeps every settin
   for(const [w,h] of [[320,480],[320,568],[351,640],[352,640],[353,640],[360,640],[375,667],[387,667],[388,667],[389,667],[390,844],[430,932]]){
     await open(page,w,h);await page.screenshot({path:info.outputPath(`${w}x${h}-setup.png`)});
     expect(await page.evaluate(()=>scrollY)).toBe(0);await inScreen(page,'#start-button');
-    await expect(page.locator('.drill-cell')).toHaveCount(5);await expect(page.locator('.note-pill')).toHaveCount(21);
+    await expect(page.locator('.drill-cell')).toHaveCount(6);await expect(page.locator('.note-pill')).toHaveCount(21);
     expect(await page.evaluate(()=>Boolean(document.querySelector('.note-pill').compareDocumentPosition(document.querySelector('#start-button'))&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     const toolRows=await page.locator('.deck-tools button').evaluateAll(es=>new Set(es.map(e=>e.getBoundingClientRect().y)).size);

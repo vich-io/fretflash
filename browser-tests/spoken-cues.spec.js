@@ -262,3 +262,73 @@ test('Cancel while tight speech loads prevents late words and supports a fresh r
   await page.locator('#start-button').click(); await expect(page.locator('.practice-done')).toBeVisible();
   expect(await page.evaluate(()=>window.__speechProof.words.length)).toBe(2);
 });
+
+for (const [strings, variant] of [[1, 'tight'], [2, 'fast'], [6, 'natural']]) {
+  test(`live speech enable produces ${variant} audio on the unchanged click grid, off cancels only speech`, async ({ page }) => {
+    const errors = []; page.on('pageerror', error => errors.push(error.message));
+    await probe(page); await page.goto(target);
+    await shortDrill(page, 200, ['C#', 'Db', 'Eb', 'F#', 'Gb', 'Ab', 'Bb'], strings);
+    await page.locator('#start-button').click(); await expect(page.locator('.practice-running')).toBeVisible();
+    const order = await page.locator('.progress-label').allTextContents();
+    const toggle = page.locator('#spoken-cues-button'); await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-busy', 'false');
+    await expect.poll(() => page.evaluate(() => window.__speechProof.words.length)).toBeGreaterThan(0);
+    const word = await page.evaluate(() => window.__speechProof.words[0]);
+    const expected = order.slice(1, -1).map(label => getSpokenClip(label, variant).duration);
+    expect(expected.some(duration => Math.abs(duration - word.duration) <= 1 / word.sampleRate)).toBe(true);
+    await expect.poll(() => page.evaluate(() => { const p = window.__speechProof, w = p.words[0]; return p.peaks.some(x => x.time > w.when + .06 && x.time < w.when + w.duration && x.peak > .01); })).toBe(true);
+    await toggle.click(); await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    const before = await page.evaluate(() => ({ clicks: window.__speechProof.clicks.length, words: window.__speechProof.words.length }));
+    expect(await page.evaluate(() => { const p = window.__speechProof, now = p.contexts[0].currentTime; return p.words.every(w => w.stops.some(t => t <= now) || w.when + w.duration <= now); })).toBe(true);
+    await expect.poll(() => page.evaluate(() => window.__speechProof.clicks.length)).toBeGreaterThan(before.clicks + 1);
+    expect(await page.evaluate(() => window.__speechProof.words.length)).toBe(before.words);
+    expect(await page.locator('.progress-label').allTextContents()).toEqual(order);
+    const clicks = await page.evaluate(() => window.__speechProof.clicks.slice(1));
+    for (let i = 1; i < clicks.length; i++) expect(clicks[i] - clicks[i - 1]).toBeCloseTo(.3, 7);
+    expect(clicks.some(when => Math.abs(when - word.when) < 1e-8)).toBe(true);
+    await page.locator('#stop-button').click(); expect(errors).toEqual([]);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('fretflash.settings.v1')).spokenCues)).toBe(false);
+  });
+}
+
+test('live voice download failure stays visible across clicks and retry works without restarting', async ({ page }) => {
+  await probe(page); await page.route('**/assets/voice/*.wav*', route => route.abort());
+  await page.goto(target); await shortDrill(page, 200, ['C#','Db','Eb','F#'], 6);
+  await page.locator('#start-button').click(); await expect(page.locator('.practice-running')).toBeVisible();
+  const order = await page.locator('.progress-label').allTextContents();
+  await page.locator('#spoken-cues-button').click();
+  await expect(page.locator('[role="alert"]')).toContainText('Turn them on to try again');
+  await expect(page.locator('#spoken-cues-button')).toHaveAttribute('aria-pressed','false');
+  const before = await page.evaluate(() => window.__speechProof.clicks.length);
+  await expect.poll(() => page.evaluate(() => window.__speechProof.clicks.length)).toBeGreaterThan(before + 1);
+  await expect(page.locator('[role="alert"]')).toBeVisible();
+  await page.unroute('**/assets/voice/*.wav*'); await page.locator('#spoken-cues-button').click();
+  await expect.poll(() => page.evaluate(() => window.__speechProof.words.length)).toBeGreaterThan(0);
+  await expect(page.locator('[role="alert"]')).toHaveCount(0);
+  expect(await page.locator('.progress-label').allTextContents()).toEqual(order);
+  await page.locator('#stop-button').click();
+});
+
+test('live loading can be switched off, then re-enabled; a late download cannot restart a stopped drill', async ({ page }) => {
+  let release; const gate = new Promise(resolve => { release = resolve; });
+  let requests = 0;
+  await page.route('**/assets/voice/*.wav*', async route => { requests++; await gate; await route.continue(); });
+  await probe(page); await page.goto(target); await shortDrill(page, 200, ['C#','Db','Eb'], 6);
+  await page.locator('#start-button').click(); await expect(page.locator('.practice-running')).toBeVisible();
+  const controlBox = await page.locator('#spoken-cues-button').boundingBox();
+  const transportBox = await page.locator('#stop-button').boundingBox();
+  const toggle = page.locator('#spoken-cues-button'); await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-busy','true'); expect(requests).toBeGreaterThan(0);
+  expect(await toggle.boundingBox()).toEqual(controlBox);
+  expect(await page.locator('#stop-button').boundingBox()).toEqual(transportBox);
+  const before = await page.evaluate(() => window.__speechProof.clicks.length);
+  await expect.poll(() => page.evaluate(() => window.__speechProof.clicks.length)).toBeGreaterThan(before + 1);
+  await toggle.click(); await expect(toggle).toHaveAttribute('aria-busy','false');
+  await toggle.click(); await expect(toggle).toHaveAttribute('aria-busy','true');
+  await page.locator('#stop-button').click(); release();
+  await expect(page.locator('#start-button')).toBeEnabled();
+  await page.waitForTimeout(400); expect(await page.evaluate(() => window.__speechProof.words.length)).toBe(0);
+  await expect(page.locator('.prompt-deck')).toBeVisible();
+  await page.locator('#start-button').click(); await expect.poll(() => page.evaluate(() => window.__speechProof.words.length)).toBeGreaterThan(0);
+  await page.locator('#stop-button').click();
+});
