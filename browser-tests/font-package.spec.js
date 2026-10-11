@@ -51,7 +51,7 @@ test('original and trimmed Inter decode natively with subpixel-stable used-weigh
       const font = new FontFace(name, Uint8Array.from(atob(data), c => c.charCodeAt(0)), { weight: '400 700' });
       await font.load(); document.fonts.add(font);
     }
-    const rows = [], text = 'FretFlash ABCDEFG C# Db ♯♭ 0123456789 Start practice Quick reference';
+    const rows = [], text = 'fretflash ABCDEFG C# Db ♯♭ 0123456789 Start practice Quick reference';
     const canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = 64;
     const ctx = canvas.getContext('2d');
     const draw = (name, weight) => {

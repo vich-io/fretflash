@@ -22,4 +22,4 @@ const server = createServer(async (request, response) => {
     response.end('Not found');
   }
 });
-server.listen(4178, '127.0.0.1', () => console.log('FretFlash browser fixture ready at http://127.0.0.1:4178/'));
+server.listen(4178, '127.0.0.1', () => console.log('fretflash browser fixture ready at http://127.0.0.1:4178/'));

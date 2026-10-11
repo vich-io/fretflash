@@ -176,7 +176,7 @@ test.describe('real update header', () => {
       await expect(page.locator('.pwa-notice')).toHaveAttribute('data-state', 'updating');
       expect(await page.locator('#start-button').boundingBox()).toEqual(before);
       await page.screenshot({ path: info.outputPath('update-pending.png') });
-      await expect(page).toHaveTitle('FretFlash ui-b');
+      await expect(page).toHaveTitle('fretflash ui-b');
       await expect(page.locator('#start-button')).toBeEnabled();
       expect(navigations).toBe(1);
       await expect.poll(() => page.evaluate(() => window.refreshFrames.length)).toBe(12);

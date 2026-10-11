@@ -1,15 +1,15 @@
-import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js?v=e1d28d720307081f';
+import { KNOWN_NOTE_LABELS, NOTE_PRESETS, TUNING_PRESET_BY_ID } from './src/music.js?v=a4ebea2a326f3f0a';
 import { FRET_MIN, FRET_MAX, isValidFretRange, parseFretBoundInput,
- BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js?v=e1d28d720307081f';
-import { createIdleState } from './src/state.js?v=e1d28d720307081f';
-import { shuffleSelectedLabels } from './src/round.js?v=e1d28d720307081f';
-import { getViewModel } from './src/view-model.js?v=e1d28d720307081f';
-import { renderHtml } from './src/render.js?v=e1d28d720307081f';
-import { createWebAudioClickPlayer } from './src/audio.js?v=e1d28d720307081f';
-import { createSetupDrafts } from './src/browser/setup-drafts.js?v=e1d28d720307081f';
-import { bindNumericGestures } from './src/browser/numeric-gestures.js?v=e1d28d720307081f';
-import { createAppController } from './src/controller.js?v=e1d28d720307081f';
-import { setupPwa } from './src/browser/pwa.js?v=e1d28d720307081f';
+ BPM_MIN, createSetup, loadSettings, parseBpmInput, saveSettings } from './src/settings.js?v=a4ebea2a326f3f0a';
+import { createIdleState } from './src/state.js?v=a4ebea2a326f3f0a';
+import { shuffleSelectedLabels } from './src/round.js?v=a4ebea2a326f3f0a';
+import { getViewModel } from './src/view-model.js?v=a4ebea2a326f3f0a';
+import { renderHtml } from './src/render.js?v=a4ebea2a326f3f0a';
+import { createWebAudioClickPlayer } from './src/audio.js?v=a4ebea2a326f3f0a';
+import { createSetupDrafts } from './src/browser/setup-drafts.js?v=a4ebea2a326f3f0a';
+import { bindNumericGestures } from './src/browser/numeric-gestures.js?v=a4ebea2a326f3f0a';
+import { createAppController } from './src/controller.js?v=a4ebea2a326f3f0a';
+import { setupPwa } from './src/browser/pwa.js?v=a4ebea2a326f3f0a';
 
 function browserStorage() {
   try { return globalThis.localStorage; } catch { return undefined; }
@@ -52,7 +52,7 @@ export function mountBrowserApp({
   createOrder = shuffleSelectedLabels,
   onPaint = () => {},
 } = {}) {
-  if (!root) throw new Error('FretFlash root element not found');
+  if (!root) throw new Error('fretflash root element not found');
   // Keep the prerendered help copy, but let live disclosure state belong to its DOM nodes.
   const quickReference = root.querySelector('#quick-reference').cloneNode(true);
   quickReference.removeAttribute('open');

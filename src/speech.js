@@ -1,7 +1,7 @@
-import { SPOKEN_BANK, SPOKEN_FAST_BANK, SPOKEN_TIGHT_BANK } from './voice-bank.js?v=e1d28d720307081f';
-import { BPM_MAX, createSetup } from './settings.js?v=e1d28d720307081f';
-import { createTuningStrings } from './music.js?v=e1d28d720307081f';
-import { createRangeFilteredRound } from './round.js?v=e1d28d720307081f';
+import { SPOKEN_BANK, SPOKEN_FAST_BANK, SPOKEN_TIGHT_BANK } from './voice-bank.js?v=a4ebea2a326f3f0a';
+import { BPM_MAX, createSetup } from './settings.js?v=a4ebea2a326f3f0a';
+import { createTuningStrings } from './music.js?v=a4ebea2a326f3f0a';
+import { createRangeFilteredRound } from './round.js?v=a4ebea2a326f3f0a';
 export { SPOKEN_BANK, SPOKEN_FAST_BANK };
 export const SPOKEN_BANKS = { natural: SPOKEN_BANK, fast: SPOKEN_FAST_BANK, tight: SPOKEN_TIGHT_BANK };
 

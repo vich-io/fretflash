@@ -3,7 +3,7 @@ import {
   NOTE_PRESETS,
   TUNING_PRESETS,
   createTuningStrings,
-} from './music.js?v=e1d28d720307081f';
+} from './music.js?v=a4ebea2a326f3f0a';
 
 import {
   BPM_MAX,
@@ -20,20 +20,20 @@ import {
   normalizeFretRange,
   normalizeSelectedStringIndexes,
   parseFretBoundInput,
-} from './settings.js?v=e1d28d720307081f';
+} from './settings.js?v=a4ebea2a326f3f0a';
 
 import {
   createRangeFilteredRound,
   formatRoundDuration,
   getFretRangeLabel,
   getRoundClickCount,
-} from './round.js?v=e1d28d720307081f';
+} from './round.js?v=a4ebea2a326f3f0a';
 
 const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 export const PROMPT_DECK_LABELS = NOTE_LETTERS.flatMap(letter => [letter, `${letter}b`, `${letter}#`]);
 
-import { FRET_RANGE_ERROR } from './browser/setup-drafts.js?v=e1d28d720307081f';
-import { getSpokenBpmMax } from './speech.js?v=e1d28d720307081f';
+import { FRET_RANGE_ERROR } from './browser/setup-drafts.js?v=a4ebea2a326f3f0a';
+import { getSpokenBpmMax } from './speech.js?v=a4ebea2a326f3f0a';
 export { FRET_RANGE_ERROR };
 
 // HTML rendering
@@ -155,7 +155,7 @@ function getLocationModeLabel(locationMode = DEFAULT_LOCATION_MODE) {
 }
 
 function renderBrand() {
-  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=e1d28d720307081f" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
+  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="fretflash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=a4ebea2a326f3f0a" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
 }
 
 function renderDrillCell(id, label, value, openPopover, error = '') {

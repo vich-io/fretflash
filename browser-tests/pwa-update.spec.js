@@ -38,7 +38,7 @@ test('update protects an active/paused drill and another open round; only the st
     server.set(release('qa-b')); expect(await update(page)).toBe('installed');
     const button = page.locator('.pwa-notice button');
     await expect(button).toBeHidden(); await button.dispatchEvent('click');
-    await expect(page).toHaveTitle('FretFlash qa-a');
+    await expect(page).toHaveTitle('fretflash qa-a');
     await expect(page.locator('.pwa-notice')).toContainText('when stopped');
     if (await page.locator('#pause-button').isVisible()) await page.locator('#pause-button').click();
     await expect(page.locator('.practice-paused')).toBeVisible(); await expect(button).toBeHidden();
@@ -48,9 +48,9 @@ test('update protects an active/paused drill and another open round; only the st
     await page.locator('.pwa-notice').screenshot({ path: info.outputPath('update-ready.png') });
     expect(await page.locator('#start-button').boundingBox()).toEqual(before);
     await context.setOffline(true); await button.click();
-    await expect(page).toHaveTitle('FretFlash qa-b');
+    await expect(page).toHaveTitle('fretflash qa-b');
     await expect(page.locator('[data-popover-target="bpm"] strong')).toHaveText('138');
-    await expect(other).toHaveTitle('FretFlash qa-a'); expect(await other.evaluate(() => window.oldRound)).toBe(true);
+    await expect(other).toHaveTitle('fretflash qa-a'); expect(await other.evaluate(() => window.oldRound)).toBe(true);
     await expect(other.locator('#stop-button')).toBeVisible();
     expect(await other.evaluate(async () => await (await fetch('/app.js?v=qa-a')).text())).toBe(original.get('app.js').toString());
     expect(await other.evaluate(async () => (await (await fetch('/assets/voice/george-tight.webm?v=qa-a')).arrayBuffer()).byteLength)).toBe(original.get('assets/voice/george-tight.webm').length);
@@ -70,7 +70,7 @@ test('missing/corrupt candidates reject the whole cache and preserve the current
       expect(await page.evaluate(() => caches.keys())).toEqual(before);
       await expect(page.getByRole('button', { name: 'Update app' })).toBeHidden();
     }
-    await context.setOffline(true); await page.reload(); await expect(page).toHaveTitle('FretFlash qa-a');
+    await context.setOffline(true); await page.reload(); await expect(page).toHaveTitle('fretflash qa-a');
     await page.locator('#start-button').click(); await expect(page.locator('#stop-button')).toBeVisible();
   } finally { await server.close(); }
 });
@@ -84,7 +84,7 @@ test('exact corrupted A rollback after A→B→C preserves every retained A byte
     const saved = await contents(page, cacheA);
     for (const version of ['qa-b', 'qa-c']) {
       server.set(release(version)); expect(await update(page)).toBe('installed');
-      await page.getByRole('button', { name: 'Update app' }).click(); await expect(page).toHaveTitle(`FretFlash ${version}`); await ready(page);
+      await page.getByRole('button', { name: 'Update app' }).click(); await expect(page).toHaveTitle(`fretflash ${version}`); await ready(page);
     }
     const before = await page.evaluate(() => caches.keys()), broken = new Map(original);
     broken.set('style.css', Buffer.from('interrupted exact rollback'));
@@ -94,7 +94,7 @@ test('exact corrupted A rollback after A→B→C preserves every retained A byte
     await context.setOffline(true);
     expect(await other.evaluate(async () => await (await fetch('/app.js?v=qa-a')).text())).toBe(original.get('app.js').toString());
     expect(await other.evaluate(async () => (await (await fetch('/assets/voice/george.webm?v=qa-a')).arrayBuffer()).byteLength)).toBe(original.get('assets/voice/george.webm').length);
-    await page.reload(); await expect(page).toHaveTitle('FretFlash qa-c'); await expect(page.locator('#start-button')).toBeEnabled();
+    await page.reload(); await expect(page).toHaveTitle('fretflash qa-c'); await expect(page.locator('#start-button')).toBeEnabled();
   } finally { await server.close(); }
 });
 
@@ -114,10 +114,10 @@ for (const pending of [false, true]) test(`Start racing delayed activation (${pe
     await expect(page.locator('.pwa-notice')).toContainText('Updating');
     await page.waitForTimeout(400); await page.locator('#start-button').click();
     await expect(page.locator('.pwa-notice')).toHaveAttribute('data-state', 'waiting');
-    await expect(page).toHaveTitle('FretFlash qa-a');
+    await expect(page).toHaveTitle('fretflash qa-a');
     await expect(page.locator(pending ? '[data-cancel-start]' : '.practice-countin')).toBeVisible();
-    await page.locator(pending ? '[data-cancel-start]' : '#stop-button').click(); await expect(page).toHaveTitle('FretFlash qa-a');
-    await page.getByRole('button', { name: 'Update app' }).click(); await expect(page).toHaveTitle('FretFlash qa-b');
+    await page.locator(pending ? '[data-cancel-start]' : '#stop-button').click(); await expect(page).toHaveTitle('fretflash qa-a');
+    await page.getByRole('button', { name: 'Update app' }).click(); await expect(page).toHaveTitle('fretflash qa-b');
   } finally { await server.close(); }
 });
 
@@ -132,14 +132,14 @@ test('stalled update action recovers without granting a late reload', async ({ p
     await page.getByRole('button', { name: 'Update app' }).click();
     await page.clock.runFor(10001);
     await expect(page.locator('.pwa-notice')).toContainText('Try again');
-    await expect(page.getByRole('button', { name: 'Update app' })).toBeEnabled(); await expect(page).toHaveTitle('FretFlash qa-a');
+    await expect(page.getByRole('button', { name: 'Update app' })).toBeEnabled(); await expect(page).toHaveTitle('fretflash qa-a');
     await worker.evaluate(() => self.skipWaiting());
     await expect(page.locator('.pwa-notice')).toHaveAttribute('data-state', 'ready');
-    await expect(page).toHaveTitle('FretFlash qa-a');
+    await expect(page).toHaveTitle('fretflash qa-a');
   } finally { await server.close(); }
 });
 
-test('zero-client activation cleans only obsolete FretFlash caches', async ({ page, context }) => {
+test('zero-client activation cleans only obsolete fretflash caches', async ({ page, context }) => {
   const server = await serveRelease(release('qa-a'));
   try {
     await page.goto(server.url); await ready(page); await page.evaluate(() => caches.open('unrelated-cache'));
@@ -148,7 +148,7 @@ test('zero-client activation cleans only obsolete FretFlash caches', async ({ pa
     const worker = await installing; await page.close();
     await expect.poll(() => worker.evaluate(() => caches.keys())).toEqual(['unrelated-cache', cacheB]);
     await context.setOffline(true); const reopened = await context.newPage(); await reopened.goto(server.url);
-    await expect(reopened).toHaveTitle('FretFlash qa-b'); await expect(reopened.locator('#start-button')).toBeEnabled();
+    await expect(reopened).toHaveTitle('fretflash qa-b'); await expect(reopened.locator('#start-button')).toBeEnabled();
   } finally { await server.close(); }
 });
 
@@ -169,7 +169,7 @@ test('retirement worker restores pre-PWA app without erasing settings or unrelat
     await page.goto(server.url); await ready(page); await setTempo(page, 138); await page.evaluate(() => caches.open('unrelated-cache'));
     server.set(retiredRelease('qa-retired'));
     await update(page); await expect.poll(() => page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0);
-    await page.reload(); await expect(page).toHaveTitle('FretFlash qa-retired');
+    await page.reload(); await expect(page).toHaveTitle('fretflash qa-retired');
     await expect(page.locator('[data-popover-target="bpm"] strong')).toHaveText('138');
     await expect(page.locator('.pwa-notice')).toHaveCount(0); expect(await page.evaluate(() => caches.keys())).toEqual(['unrelated-cache']);
     await page.locator('#start-button').click(); await expect(page.locator('#stop-button')).toBeVisible();

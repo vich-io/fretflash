@@ -111,7 +111,7 @@ test('renderHtml renders the compact setup shell and validation errors', () => {
   assert.match(html, /class="app-shell app-shell-setup"/);
   assert.match(html, /<div class="setup-launcher">/);
   assert.match(html, /<div class="setup-app-bar">/);
-  assert.match(html, /<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup">/);
+  assert.match(html, /<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="fretflash — return to setup">/);
   assert.match(html, /<img class="brand-mark" src="assets\/icons\/fretflash-six-line-f\.svg" alt="" aria-hidden="true" width="28" height="28">/);
   assert.doesNotMatch(html, />✦</);
   const brandButton = html.match(/<button id="brand-home-button"[\s\S]*?<\/button>/)?.[0] ?? '';

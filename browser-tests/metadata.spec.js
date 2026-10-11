@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const title = 'FretFlash — free guitar fretboard trainer';
+const title = 'fretflash — free guitar fretboard trainer';
 const description = 'Practice guitar fretboard note recall with click-paced prompts. Choose notes, strings, tuning and fret range, then find each note in time.';
 
 test.describe('initial HTML', () => {
@@ -15,10 +15,10 @@ test.describe('initial HTML', () => {
     for (const [name, value] of Object.entries({ description, 'twitter:title': title, 'twitter:description': description, 'twitter:card': 'summary_large_image' })) {
       await expect(page.locator(`meta[name="${name}"]`)).toHaveAttribute('content', value);
     }
-    for (const [property, value] of Object.entries({ 'og:title': title, 'og:description': description, 'og:type': 'website', 'og:site_name': 'FretFlash', 'og:url': 'https://fretflash.vich.io/', 'og:image': 'https://fretflash.vich.io/assets/share-card.png' })) {
+    for (const [property, value] of Object.entries({ 'og:title': title, 'og:description': description, 'og:type': 'website', 'og:site_name': 'fretflash', 'og:url': 'https://fretflash.vich.io/', 'og:image': 'https://fretflash.vich.io/assets/share-card.png' })) {
       await expect(page.locator(`meta[property="${property}"]`)).toHaveAttribute('content', value);
     }
-    expect(JSON.parse(await page.locator('script[type="application/ld+json"]').textContent())).toEqual({ '@context': 'https://schema.org', '@type': 'WebSite', name: 'FretFlash', url: 'https://fretflash.vich.io/' });
+    expect(JSON.parse(await page.locator('script[type="application/ld+json"]').textContent())).toEqual({ '@context': 'https://schema.org', '@type': 'WebSite', name: 'fretflash', url: 'https://fretflash.vich.io/' });
     for (const [selector, dimensions] of [['meta[property="og:image"]', [1200, 630]], ['link[rel="icon"][type="image/png"]', [192, 192]]]) {
       const source = await page.locator(selector).getAttribute(selector.startsWith('meta') ? 'content' : 'href');
       const path = new URL(source, 'https://fretflash.vich.io/').pathname;

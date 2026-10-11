@@ -5,7 +5,7 @@ import { buildWorker, versionRuntime } from '../../scripts/offline-release.mjs';
 export function release(version, { delay = 0, ignoreActivation = false } = {}) {
   const names = JSON.parse(readFileSync('runtime-files.json')).files;
   const files = versionRuntime(new Map(names.map(name => [name, readFileSync(name)])), version);
-  files.set('index.html', Buffer.from(files.get('index.html').toString().replace(/<title>[^<]*<\/title>/, `<title>FretFlash ${version}</title>`)));
+  files.set('index.html', Buffer.from(files.get('index.html').toString().replace(/<title>[^<]*<\/title>/, `<title>fretflash ${version}</title>`)));
   if (delay || ignoreActivation) {
     const source = files.get('sw.js').toString();
     if (!source.includes('event.waitUntil(self.skipWaiting());')) throw new Error('Activation fixture seam changed');
