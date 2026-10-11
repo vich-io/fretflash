@@ -2,6 +2,8 @@
 
 Practice finding guitar notes, in time. [Open fretflash](https://fretflash.vich.io/).
 
+<img src="assets/readme/drill.png" alt="fretflash showing A-flat on the D string, with B-flat next" width="536">
+
 1. Choose notes, strings, tuning and fret range.
 2. Press **Start**. Four clicks count you in.
 3. Play the displayed note on the indicated string, one position per click, from low string to high.
