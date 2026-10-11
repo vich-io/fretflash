@@ -21,8 +21,8 @@ export function retiredRelease(version) {
   const files = release(version);
   files.set('src/browser/pwa.js', Buffer.from('export const setupPwa = () => ({ refresh() {} });'));
   const html = files.get('index.html').toString();
-  if (!/<(?:aside|div) class="pwa-notice"[\s\S]*?<\/(?:aside|div)>/.test(html)) throw new Error('Maintenance fixture seam changed');
-  files.set('index.html', Buffer.from(html.replace(/<(?:aside|div) class="pwa-notice"[\s\S]*?<\/(?:aside|div)>/, '')));
+  if (!/<aside class="pwa-notice"[\s\S]*?<\/aside>/.test(html)) throw new Error('Maintenance fixture seam changed');
+  files.set('index.html', Buffer.from(html.replace(/<aside class="pwa-notice"[\s\S]*?<\/aside>/, '')));
   files.set('sw.js', readFileSync('scripts/retire-service-worker.js'));
   return files;
 }

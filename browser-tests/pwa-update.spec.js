@@ -163,7 +163,7 @@ test('failed first installation leaves online playback usable and a later comple
   } finally { await server.close(); }
 });
 
-test('retirement worker restores pre-PWA app without erasing settings or unrelated caches', async ({ page }) => {
+test('retirement worker restores a non-PWA app without erasing settings or unrelated caches', async ({ page }) => {
   const server = await serveRelease(release('qa-a'));
   try {
     await page.goto(server.url); await ready(page); await setTempo(page, 138); await page.evaluate(() => caches.open('unrelated-cache'));
