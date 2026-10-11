@@ -3,7 +3,7 @@ import {
   NOTE_PRESETS,
   TUNING_PRESETS,
   createTuningStrings,
-} from './music.js?v=3ec35fda7bf8f641';
+} from './music.js?v=e1d28d720307081f';
 
 import {
   BPM_MAX,
@@ -20,20 +20,20 @@ import {
   normalizeFretRange,
   normalizeSelectedStringIndexes,
   parseFretBoundInput,
-} from './settings.js?v=3ec35fda7bf8f641';
+} from './settings.js?v=e1d28d720307081f';
 
 import {
   createRangeFilteredRound,
   formatRoundDuration,
   getFretRangeLabel,
   getRoundClickCount,
-} from './round.js?v=3ec35fda7bf8f641';
+} from './round.js?v=e1d28d720307081f';
 
 const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 export const PROMPT_DECK_LABELS = NOTE_LETTERS.flatMap(letter => [letter, `${letter}b`, `${letter}#`]);
 
-import { FRET_RANGE_ERROR } from './browser/setup-drafts.js?v=3ec35fda7bf8f641';
-import { getSpokenBpmMax } from './speech.js?v=3ec35fda7bf8f641';
+import { FRET_RANGE_ERROR } from './browser/setup-drafts.js?v=e1d28d720307081f';
+import { getSpokenBpmMax } from './speech.js?v=e1d28d720307081f';
 export { FRET_RANGE_ERROR };
 
 // HTML rendering
@@ -155,7 +155,7 @@ function getLocationModeLabel(locationMode = DEFAULT_LOCATION_MODE) {
 }
 
 function renderBrand() {
-  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=3ec35fda7bf8f641" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
+  return `<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup"><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=e1d28d720307081f" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1>`;
 }
 
 function renderDrillCell(id, label, value, openPopover, error = '') {
@@ -234,12 +234,12 @@ function renderPromptDeck(selectedLabels) {
 
 function renderShortcutBar(phase) {
   const primary = phase === 'idle' ? 'Start' : phase === 'done' ? 'Shuffle' : phase === 'paused' ? 'Resume' : 'Pause';
-  const home = '<a class="home-link" href="https://vich.io/">vich.io</a>';
+  const home = '<a class="home-link" href="https://vich.io/"><span class="footer-label">vich.io</span></a>';
   if (phase === 'idle') {
-    return `<footer class="app-footer"><p class="shortcut-hint"><span class="shortcut-plain">SPACE ${primary}</span><kbd>SPACE</kbd> ${primary}</p>${home}</footer>`;
+    return `<footer class="app-footer"><p class="shortcut-hint"><span class="shortcut-plain">SPACE ${primary}</span><kbd><span class="footer-label">SPACE</span></kbd> <span class="footer-label">${primary}</span></p>${home}</footer>`;
   }
   const esc = 'Exit';
-  return `<footer class="app-footer"><p class="shortcut-hint"><span class="shortcut-plain">SPACE ${primary} · ESC ${esc}</span><kbd>SPACE</kbd> ${primary} <span>·</span> <kbd>ESC</kbd> ${esc}</p>${home}</footer>`;
+  return `<footer class="app-footer"><p class="shortcut-hint"><span class="shortcut-plain">SPACE ${primary} · ESC ${esc}</span><kbd><span class="footer-label">SPACE</span></kbd> <span class="footer-label">${primary}</span> <span class="footer-label">·</span> <kbd><span class="footer-label">ESC</span></kbd> <span class="footer-label">${esc}</span></p>${home}</footer>`;
 }
 
 function renderPracticeContext(setup, phase) {

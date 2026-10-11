@@ -3,7 +3,7 @@
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('assets/fonts/inter-latin-variable.woff2?v=3ec35fda7bf8f641') format('woff2');
+  src: url('assets/fonts/inter-latin-variable.woff2?v=e1d28d720307081f') format('woff2');
 }
 
 :root {
@@ -91,7 +91,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { appearance:
 .setup-start-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
 .setup-start-row .deck-footer { flex: 0 0 auto; justify-content: end; }
 .setup-start-row .note-pool-summary { flex: 1 1 8rem; min-width: 0; margin: 0; }
-.setup-tail { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 1rem; }
+.setup-tail { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1rem; }
 .setup-tail .app-footer { margin: 0; }
 .setup-tail:has(.quick-help[open]) { grid-template-columns: minmax(0, 1fr); }
 .setup-app-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 1rem; }
@@ -246,6 +246,11 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { appearance:
 summary { cursor: pointer; min-height: 2.75rem; align-content: center; }
 .quick-help { color: var(--muted); font-size: 0.85rem; }
 .quick-help summary { width: fit-content; max-width: 100%; }
+.quick-help > summary { position: relative; display: flex; align-items: center; list-style: none; }
+.quick-help > summary::before { content: '▶'; position: absolute; left: -16px; font-size: 10px; }
+.quick-help[open] > summary::before { content: '▼'; }
+/* Optical correction selected in the Windows Chrome footer review. */
+.quick-help > summary > .footer-label { transform: translateY(-0.0625rem); }
 .quick-help p { margin: 0.5rem 0 1rem; line-height: 1.6; }
 .quick-help strong { color: var(--text); font-weight: 500; }
 .quick-help details { border-top: 1px solid var(--line); }
@@ -253,14 +258,17 @@ summary { cursor: pointer; min-height: 2.75rem; align-content: center; }
 
 .app-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; min-height: 2.75rem; }
 .home-link { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0.25rem; color: var(--muted); font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 0.8rem; text-decoration: none; }
-.shortcut-hint { margin: 0; color: var(--muted); font-size: 0.72rem; font-weight: 400; }
+.shortcut-hint { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0; color: var(--muted); font-size: 0.72rem; font-weight: 400; }
+.footer-label { display: inline-block; line-height: 1; text-box-trim: trim-both; text-box-edge: cap alphabetic; }
+.home-link > .footer-label { transform: translateY(0.0625rem); }
 .shortcut-plain { display: none; }
 kbd { font: inherit; padding: 0.15rem 0.3rem; border: 1px solid var(--line); border-radius: 0.25rem; }
+.shortcut-hint kbd { display: inline-flex; align-items: center; height: 1.25rem; line-height: 1; }
 .touch-first .shortcut-hint { display: none; }
-.touch-first.keyboard-seen .shortcut-hint { display: block; }
+.touch-first.keyboard-seen .shortcut-hint { display: inline-flex; }
 @media (hover: none) and (pointer: coarse) {
   .shortcut-hint { display: none; }
-  .keyboard-seen .shortcut-hint { display: block; }
+  .keyboard-seen .shortcut-hint { display: inline-flex; }
 }
 
 .app-shell-practice { overflow: visible; }
@@ -435,7 +443,7 @@ kbd { font: inherit; padding: 0.15rem 0.3rem; border: 1px solid var(--line); bor
   .setup-tail > * { min-width: 0; }
   .setup-tail .quick-help { margin: 0; }
   .setup-tail .quick-help > summary { min-height: 2.75rem; display: flex; align-items: center; }
-  .setup-tail .app-footer { min-height: 2.75rem; align-items: center; }
+  .setup-tail .app-footer { min-height: 2.75rem; }
   .setup-launcher:has(.quick-help[open]) { height: auto; max-height: none; grid-template-rows: auto auto auto; }
   .setup-launcher:has(.quick-help[open]) .setup-scroll { overflow: visible; }
 }

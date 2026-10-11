@@ -124,7 +124,7 @@ test('renderHtml renders the compact setup shell and validation errors', () => {
     assert.match(html, new RegExp(`<span class="drill-cell-label">${label}<\\/span>`));
   });
 
-  assert.match(html, /<a class="home-link" href="https:\/\/vich\.io\/">vich\.io<\/a>/);
+  assert.match(html, /<a class="home-link" href="https:\/\/vich\.io\/"><span class="footer-label">vich\.io<\/span><\/a>/);
   assert.ok(html.indexOf('class="app-footer"') > html.indexOf('id="start-button"'));
   assert.match(html, /class="drill-cell-chevron" aria-hidden="true">⌄<\/span>/);
   assert.match(html, / · shuffled<\/p>/);

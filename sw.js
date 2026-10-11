@@ -1,117 +1,118 @@
 // precache:start
-const CACHE_NAME = 'fretflash-offline-4cc1e197357792a8eaac03d3e6d5ebc521f548899f773b996570bdf1e3a4ac84';
+const CACHE_NAME = 'fretflash-offline-c9a83de158e926541868700f9275c67ad215bcc5a7f59ca9c456517808dd1ba8';
 const PRECACHE = [
   {
     "url": "/",
-    "integrity": "sha256-d2NSfxqX4Vozm0a93Q3nImkux7Orz7S8lRSOFiv8Xeo="
+    "integrity": "sha256-6KaWtY6I0hZ8nW1uIozPqEreRE0h+UOIbF0aEFCcS5w="
   },
   {
-    "url": "/app.js?v=3ec35fda7bf8f641",
-    "integrity": "sha256-NtGTIK3qTPr83xNmFlsRwbt7eCOktIepqswTe9p9ZmU="
+    "url": "/app.js?v=e1d28d720307081f",
+    "integrity": "sha256-+fdYNcpEKloCa+ZgtORImzJJ1oBEgDu5W0kCwwOeKUI="
   },
   {
-    "url": "/assets/fonts/inter-latin-variable.woff2?v=3ec35fda7bf8f641",
+    "url": "/assets/fonts/inter-latin-variable.woff2?v=e1d28d720307081f",
     "integrity": "sha256-6F0dycojnXiMFEW4yyRoHFRcZZf+j4+loiPBFwY9lns="
   },
   {
-    "url": "/assets/fonts/OFL.txt?v=3ec35fda7bf8f641",
+    "url": "/assets/fonts/OFL.txt?v=e1d28d720307081f",
     "integrity": "sha256-JiSB6ERSGzJvXs0FPlm5jIstp4yO4b27boF0MF5Uk1o="
   },
   {
-    "url": "/assets/icons/fretflash-192.png?v=3ec35fda7bf8f641",
+    "url": "/assets/icons/fretflash-192.png?v=e1d28d720307081f",
     "integrity": "sha256-d67c8MWP6XLJ07+ggB18/PmEEst6pToUlvGDOMeaADk="
   },
   {
-    "url": "/assets/icons/fretflash-512.png?v=3ec35fda7bf8f641",
+    "url": "/assets/icons/fretflash-512.png?v=e1d28d720307081f",
     "integrity": "sha256-KqAVbdM36Sr+PqMAhdYU5nkOU6uHyGtkS3CWZ1EAy0w="
   },
   {
-    "url": "/assets/icons/fretflash-apple-180.png?v=3ec35fda7bf8f641",
+    "url": "/assets/icons/fretflash-apple-180.png?v=e1d28d720307081f",
     "integrity": "sha256-jOWKoeh+TzlR4BgQxIIw/3pDvj0rgv2kbLAPiji5CeY="
   },
   {
-    "url": "/assets/icons/fretflash-maskable-512.png?v=3ec35fda7bf8f641",
+    "url": "/assets/icons/fretflash-maskable-512.png?v=e1d28d720307081f",
     "integrity": "sha256-w0W7RCBs+8i3foZC51qM6mULCAXKO57cuWoXCH3HgXs="
   },
   {
-    "url": "/assets/icons/fretflash-six-line-f.svg?v=3ec35fda7bf8f641",
+    "url": "/assets/icons/fretflash-six-line-f.svg?v=e1d28d720307081f",
     "integrity": "sha256-rgXkhkcwkRi+yFvX5UCSzGxCe6CH/0DkuSI+7hKyBLU="
   },
   {
-    "url": "/assets/voice/george-fast.webm?v=3ec35fda7bf8f641",
+    "url": "/assets/voice/george-fast.webm?v=e1d28d720307081f",
     "integrity": "sha256-SAhaa+CDa4R7GAMTSJw6Aaj3kql1udBYlhcsYQsyQUw="
   },
   {
-    "url": "/assets/voice/george-tight.webm?v=3ec35fda7bf8f641",
+    "url": "/assets/voice/george-tight.webm?v=e1d28d720307081f",
     "integrity": "sha256-P9PUaOvmTHWhQAlrCoOyBVJtQRuOI/hrdcdb1e3Jw14="
   },
   {
-    "url": "/assets/voice/george.webm?v=3ec35fda7bf8f641",
+    "url": "/assets/voice/george.webm?v=e1d28d720307081f",
     "integrity": "sha256-QGdatWFX46N2xKlqb0kf50Y9XP0/xNYrdlErEoBhex8="
   },
   {
-    "url": "/manifest.json?v=3ec35fda7bf8f641",
-    "integrity": "sha256-NiivOtIuflhpKX2HAVRxD751ao+14RDmtoqIiF/djqs="
+    "url": "/manifest.json?v=e1d28d720307081f",
+    "integrity": "sha256-i++oRXBca8Zl+UTtyFTDJs2lRWqbvyBykmA0FGnacSE="
   },
   {
-    "url": "/src/audio.js?v=3ec35fda7bf8f641",
-    "integrity": "sha256-NccPO/JiO4ssvEhQo4mKlE6jm1C3YU+A8HakTgUN5Ng="
+    "url": "/src/audio.js?v=e1d28d720307081f",
+    "integrity": "sha256-L+36q5Nps4Kq1/GmBuFfdXidWVZGjYfmO70VEolJRXY="
   },
   {
-    "url": "/src/browser/numeric-gestures.js?v=3ec35fda7bf8f641",
+    "url": "/src/browser/numeric-gestures.js?v=e1d28d720307081f",
     "integrity": "sha256-CqRfxDk2TTSCduoJ9vzQwbL9fe13GSMqkCwWpOklLfs="
   },
   {
-    "url": "/src/browser/pwa.js?v=3ec35fda7bf8f641",
+    "url": "/src/browser/pwa.js?v=e1d28d720307081f",
     "integrity": "sha256-TuI23TycFKdV2w67+c3bIEvtH/Dg4BGVyoelABVJreI="
   },
   {
-    "url": "/src/browser/setup-drafts.js?v=3ec35fda7bf8f641",
-    "integrity": "sha256-s5keNUM2pw96j6MWH7yzjmFaDCUb5N3cHlpeHdM7CE8="
+    "url": "/src/browser/setup-drafts.js?v=e1d28d720307081f",
+    "integrity": "sha256-YjK+dJc8l83nME48SoYW9mOFWX8IKxyMNmLvFypXpwM="
   },
   {
-    "url": "/src/controller.js?v=3ec35fda7bf8f641",
-    "integrity": "sha256-ZTg8L8Rz36eNeEB2q63VpGvvWCv4bAuuaKWZj21jYoQ="
+    "url": "/src/controller.js?v=e1d28d720307081f",
+    "integrity": "sha256-/EKPjcazKsuFeXUNUkPdTRQVYWvXPad3OtrIJOgHd0E="
   },
   {
-    "url": "/src/music.js?v=3ec35fda7bf8f641",
+    "url": "/src/music.js?v=e1d28d720307081f",
     "integrity": "sha256-m2XpbDkBVCP837NOrMTw9ufacpC3suENJ3ZoOSLpAyw="
   },
   {
-    "url": "/src/render.js?v=3ec35fda7bf8f641",
-    "integrity": "sha256-eq75M+XfPbZ1L5GayGEIcw2mhsqi6T/r6Y+nZyAPXNA="
+    "url": "/src/render.js?v=e1d28d720307081f",
+    "integrity": "sha256-gfyAHujus6P9/rczmQum0fE1S3DIIKd+glb1EF10X0A="
   },
   {
-    "url": "/src/round.js?v=3ec35fda7bf8f641",
-    "integrity": "sha256-N2BBSTegeWvLeI5T8kay2Dj1gIW+OtFf3ovh5wu9wO0="
+    "url": "/src/round.js?v=e1d28d720307081f",
+    "integrity": "sha256-mf8nQAxu5H9frcmCJXUk8n4YTqHfWLevg/txRGP7KuA="
   },
   {
-    "url": "/src/settings.js?v=3ec35fda7bf8f641",
-    "integrity": "sha256-Q4OHR/z1E4Pmcs/cbDmePL0ThqV/Qu2UHfW544YNOUM="
+    "url": "/src/settings.js?v=e1d28d720307081f",
+    "integrity": "sha256-5hh4mY0CpDZGmVVO4TGq+4LlaPbAMw0m5pQ0Jkx2vnc="
   },
   {
-    "url": "/src/speech.js?v=3ec35fda7bf8f641",
-    "integrity": "sha256-4AxQo/mZ+FW8MyW5bUPQuXsKVrValh2gJtP6puLq6EI="
+    "url": "/src/speech.js?v=e1d28d720307081f",
+    "integrity": "sha256-0l26QM/fkBq0ZXl8Sp/eXDCW6T40i2vNI7RNeDD69tY="
   },
   {
-    "url": "/src/state.js?v=3ec35fda7bf8f641",
-    "integrity": "sha256-rbTaH+k3ctZ9hVrQKP8q/RNvAGcxhO/oZdAMYQ2sORc="
+    "url": "/src/state.js?v=e1d28d720307081f",
+    "integrity": "sha256-XcI+pM92FBMz456dP7b6XDyASqhnQSIA2+rtejRFTNY="
   },
   {
-    "url": "/src/view-model.js?v=3ec35fda7bf8f641",
+    "url": "/src/view-model.js?v=e1d28d720307081f",
     "integrity": "sha256-Nq0dQkqUIIuuHXioByvhhPEeCmpeP0ebx7jkFsG6qr8="
   },
   {
-    "url": "/src/voice-bank.js?v=3ec35fda7bf8f641",
+    "url": "/src/voice-bank.js?v=e1d28d720307081f",
     "integrity": "sha256-ZQk0IhfKg7idrEelU4Ot0pgaidGKloIvr2jfKeqfXmo="
   },
   {
-    "url": "/style.css?v=3ec35fda7bf8f641",
-    "integrity": "sha256-Vb1zRetWP6L5dKkp0Be7xsqk1W75RGdejIAXu9rhhFU="
+    "url": "/style.css?v=e1d28d720307081f",
+    "integrity": "sha256-8dKjStjLgzo0NJK60+3oe8RgU/Mq5q3Yc8udr4LrD90="
   }
 ];
 // precache:end
 
+// Update-position retry release; no app or worker behavior changes.
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const retained = await caches.has(CACHE_NAME);

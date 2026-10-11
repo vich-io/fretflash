@@ -27,14 +27,14 @@
     </script>
     <meta name="theme-color" content="#191919">
     <style>html { background: #191919; color-scheme: dark; }</style>
-    <link rel="manifest" href="manifest.json?v=3ec35fda7bf8f641">
-    <link rel="apple-touch-icon" href="assets/icons/fretflash-apple-180.png?v=3ec35fda7bf8f641">
-    <link rel="preload" href="assets/fonts/inter-latin-variable.woff2?v=3ec35fda7bf8f641" as="font" type="font/woff2" crossorigin>
-    <link rel="license" href="assets/fonts/OFL.txt?v=3ec35fda7bf8f641" type="text/plain" title="Inter font — SIL Open Font License 1.1">
-    <link rel="icon" type="image/svg+xml" href="assets/icons/fretflash-six-line-f.svg?v=3ec35fda7bf8f641">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/fretflash-192.png?v=3ec35fda7bf8f641">
-    <link rel="stylesheet" href="style.css?v=3ec35fda7bf8f641">
-    <script type="module" src="app.js?v=3ec35fda7bf8f641" blocking="render"></script>
+    <link rel="manifest" href="manifest.json?v=e1d28d720307081f">
+    <link rel="apple-touch-icon" href="assets/icons/fretflash-apple-180.png?v=e1d28d720307081f">
+    <link rel="preload" href="assets/fonts/inter-latin-variable.woff2?v=e1d28d720307081f" as="font" type="font/woff2" crossorigin>
+    <link rel="license" href="assets/fonts/OFL.txt?v=e1d28d720307081f" type="text/plain" title="Inter font — SIL Open Font License 1.1">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/fretflash-six-line-f.svg?v=e1d28d720307081f">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/fretflash-192.png?v=e1d28d720307081f">
+    <link rel="stylesheet" href="style.css?v=e1d28d720307081f">
+    <script type="module" src="app.js?v=e1d28d720307081f" blocking="render"></script>
     <script>
       // Reloads paint the restored setup; first visits keep the immediate static preview.
       if (performance.getEntriesByType('navigation')[0]?.type !== 'reload') {
@@ -48,7 +48,7 @@
 <div class="setup-launcher">
 <div class="setup-scroll">
 <div class="setup-app-bar">
-<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup" disabled><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=3ec35fda7bf8f641" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1><div data-maintenance-slot></div>
+<h1 class="brand-heading"><button id="brand-home-button" class="app-brand" type="button" aria-label="FretFlash — return to setup" disabled><img class="brand-mark" src="assets/icons/fretflash-six-line-f.svg?v=e1d28d720307081f" alt="" aria-hidden="true" width="28" height="28"><span class="brand-wordmark">fretflash.</span></button></h1><div data-maintenance-slot></div>
 </div>
 <section class="drill-header" aria-label="Drill setup">
 <button class="drill-cell" type="button" data-popover-target="bpm" aria-expanded="false" disabled><span class="drill-cell-label">BPM</span><strong>40</strong><span class="drill-cell-chevron" aria-hidden="true">⌄</span></button>
@@ -74,7 +74,7 @@
 </div>
 <div class="setup-transport"><div id="app-feedback"></div><div class="setup-start-row"><p class="note-pool-summary">12 notes · 72 clicks · 1m 48s · shuffled</p><footer class="deck-footer"><button id="start-button" class="primary-action" type="button" disabled>Start</button></footer></div></div>
 <div class="setup-tail"><details id="quick-reference" class="quick-help">
-            <summary>Quick reference</summary>
+            <summary><span class="footer-label">Quick reference</span></summary>
             <p>Choose notes and press <strong>Start</strong>. After four count-in clicks, play the displayed note on the indicated string, one location per click, from low string to high. Find the frets yourself; FretFlash does not check your playing.</p>
             <p><strong>BPM &amp; Frets:</strong> tap a number to type, swipe up/down, or hold +/−. Fret 0 is the open string.</p>
             <p><strong>Spoken cues:</strong> hear the next note one click before you play it. Switch on or off during a drill.</p>
@@ -88,7 +88,7 @@
               <p><strong>Offline:</strong> open once online before practising offline. Install from your browser menu, or Share → Add to Home Screen on iPhone/iPad. Stop the drill before choosing Update.</p>
             </details>
           </details>
-<footer class="app-footer"><p class="shortcut-hint"><span class="shortcut-plain">SPACE Start</span><kbd>SPACE</kbd> Start</p><a class="home-link" href="https://vich.io/">vich.io</a></footer></div>
+<footer class="app-footer"><p class="shortcut-hint"><span class="shortcut-plain">SPACE Start</span><kbd><span class="footer-label">SPACE</span></kbd> <span class="footer-label">Start</span></p><a class="home-link" href="https://vich.io/"><span class="footer-label">vich.io</span></a></footer></div>
 </div>
 </main></div>
     <aside class="pwa-notice" aria-label="App maintenance" aria-live="polite" hidden><span></span><button type="button" aria-label="Update app" hidden>Update</button></aside>
